@@ -1,0 +1,67 @@
+.row {
+  display: flex;
+}
+
+.userRow {
+  justify-content: flex-end;
+}
+
+.assistantRow {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: min(760px, 90%);
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+}
+
+.userBubble {
+  background: #1d4ed8;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+.assistantBubble {
+  background: #111827;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.role {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.plain {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.markdown {
+  line-height: 1.55;
+}
+
+.markdown p {
+  margin: 0 0 10px;
+}
+
+.markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown code {
+  background: #0b1220;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.usage {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #93c5fd;
+}

@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "## Xác suất độc lập là gì?\n\nHai sự kiện A và B được gọi là **độc lập** khi việc xảy ra của sự kiện này **không ảnh hưởng** đến xác suất xảy ra của sự kiện kia.\n\n## Định nghĩa toán học:\n\nHai sự kiện A và B độc lập khi:\n```\nP(A|B) = P(A)\n```\nhoặc tương đương:\n```\nP(A ∩ B) = P(A) × P(B)\n```\n\nTrong đó:\n- **P(A|B)**: Xác suất A xảy ra biết B đã xảy ra\n- **P(A ∩ B)**: Xác suất cả A và B cùng xảy ra\n\n## Ví dụ thực tế:\n\n### 1️⃣ Tung đồng xu 2 lần\n```\nSự kiện A: Lần 1 ra mặt ngửa → P(A) = 1/2\nSự kiện B: Lần 2 ra mặt ngửa → P(B) = 1/2\n\nP(A ∩ B) = 1/2 × 1/2 = 1/4 (cả 2 lần đều ngửa)\n```\n\n### 2️⃣ Rút bài có hoàn lại\n```\nLần 1: Rút được lá K → P(A) = 4/52\nLần 2: Rút được lá K → P(B) = 4/52\n\nP(A ∩ B) = 4/52 × 4/52 = 1/169\n```\n\n### 3️⃣ Thời tiết ở 2 thành phố khác nhau\n```\nA: Hà Nội mưa → P(A) = 0,3\nB: TP.HCM mưa → P(B) = 0,4\n\nP(A ∩ B) = 0,3 × 0,4 = 0,12\n```\n\n## So sánh: Độc lập vs Phụ thuộc\n\n| Tiêu chí | Độc lập | Phụ thuộc |\n|---------|---------|-----------|\n| **Công thức** | P(A∩B) = P(A)×P(B) | P(A∩B) = P(A)×P(B\\|A) |\n| **Ví dụ** | Tung 2 đồng xu | Rút bài không hoàn lại |\n| **Điều kiện** | P(A\\|B) = P(A) | P(A\\|B) ≠ P(A) |\n\n### Ví dụ phụ thuộc:\n```\nRút bài không hoàn lại:\n- Lần 1 rút K: P(A) = 4/52\n- Lần 2 rút K (biết lần 1 là K): P(B|A) = 3/51\n- P(A ∩ B) = 4/52 × 3/51 ≠ 4/52 × 4/52\n```\n\n## Cách kiểm tra tính độc lập:\n\n**Phương pháp 1**: So sánh công thức\n```\nNếu P(A∩B) = P(A)×P(B) → Độc lập\nNếu P(A∩B) ≠ P(A)×P(B) → Phụ thuộc\n```\n\n**Phương pháp 2**: Kiểm tra điều kiện\n```\nNếu P(A|B) = P(A) → Độc lập\n```\n\n## Ứng dụng thực tế:\n- 📊 **",
+  "usage": {
+    "input_tokens": 2012,
+    "output_tokens": 1024
+  }
+}

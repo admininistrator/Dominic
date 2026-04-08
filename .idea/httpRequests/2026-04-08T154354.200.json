@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "Xin chào! Dưới đây là giải thích ngắn gọn về MySQL:\n\n## MySQL là gì?\nMySQL là một **hệ quản trị cơ sở dữ liệu quan hệ** (RDBMS) mã nguồn mở, sử dụng ngôn ngữ truy vấn SQL (Structured Query Language).\n\n## Đặc điểm chính:\n- **Miễn phí**: Mã nguồn mở, không tốn phí license\n- **Hiệu suất cao**: Xử lý nhanh, ổn định\n- **Đa nền tảng**: Chạy trên Windows, Linux, macOS\n- **Bảo mật tốt**: Có nhiều lớp bảo mật\n- **Dễ sử dụng**: Cú pháp SQL đơn giản, dễ học\n\n## Ứng dụng phổ biến:\n- **Web development**: Kết hợp với PHP, Python, Java\n- **Ứng dụng doanh nghiệp**: Quản lý dữ liệu khách hàng, kho\n- **E-commerce**: Cửa hàng trực tuyến\n- **Content Management**: WordPress, Drupal\n\n## Ví dụ cơ bản:\n```sql\n-- Tạo database\nCREATE DATABASE shop;\n\n-- Tạo bảng\nCREATE TABLE products (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    price DECIMAL(10,2)\n);\n```\n\nMySQL là lựa chọn phổ biến cho các dự án từ nhỏ đến lớn nhờ tính ổn định và cộng đồng hỗ trợ mạnh.",
+  "usage": {
+    "input_tokens": 40,
+    "output_tokens": 470
+  }
+}

@@ -1,0 +1,3 @@
+{
+  "detail": "(pymysql.err.IntegrityError) (1452, 'Cannot add or update a child row: a foreign key constraint fails (`dominicdb`.`messages`, CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE)')\n[SQL: INSERT INTO messages (conversation_id, role, content, input_tokens, output_tokens) VALUES (%(conversation_id)s, %(role)s, %(content)s, %(input_tokens)s, %(output_tokens)s)]\n[parameters: {'conversation_id': 1, 'role': 'user', 'content': 'Xin chào, hãy giải thích ngắn gọn về cơ sở dữ liệu MySQL.', 'input_tokens': 0, 'output_tokens': 0}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+}

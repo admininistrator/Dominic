@@ -1,0 +1,16 @@
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.main {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+  min-width: 0;
+  border-left: 1px solid #1e293b;
+}

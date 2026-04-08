@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "reply": "# OpenAI - Giới thiệu Tổng Quan\n\n## Thông tin cơ bản\n**OpenAI** là một công ty nghiên cứu trí tuệ nhân tạo (AI) được thành lập năm **2015** tại Hoa Kỳ.\n\n## Sứ mệnh\n- Phát triển AI an toàn và có lợi cho nhân loại\n- Tiến hành nghiên cứu về AI tiên tiến\n- Làm cho AI dễ tiếp cận hơn với công chúng\n\n## Các sản phẩm nổi bật\n\n| Sản phẩm | Đặc điểm |\n|----------|----------|\n| **ChatGPT** | Chatbot AI phổ biến nhất hiện nay |\n| **GPT-4** | Mô hình ngôn ngữ lớn mạnh mẽ |\n| **DALL-E** | AI tạo hình ảnh từ mô tả văn bản |\n| **Whisper** | Mô hình nhận dạng giọng nói |\n\n## Những cột mốc quan trọng\n- **2018**: Công bố GPT (Generative Pre-trained Transformer)\n- **2020**: GPT-3 gây chú ý toàn cầu\n- **2022**: ChatGPT ra mắt, đạt 1 triệu người dùng trong 5 ngày\n- **2023**: GPT-4 công bố\n\n## Lãnh đạo\n- **Sam Altman** - CEO\n- **Ilya Sutskever** - Chief Scientist\n\n## Tầm ảnh hưởng\nOpenAI là một trong những công ty dẫn đầu cuộc cách mạng AI hiện nay, tuy nhiên cũng gặp các tranh luận về **l道đức, bản quyền, và an toàn AI**.\n\n---\n\n*Lưu ý: Tôi (Claude) được tạo bởi **Anthropic**, không phải OpenAI.*",
+  "usage": {
+    "input_tokens": 490,
+    "output_tokens": 559
+  },
+  "request_id": "97d83984-1126-446c-8556-76fb13bff533"
+}

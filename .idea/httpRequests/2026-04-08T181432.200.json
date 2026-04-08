@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "Tôi có thể giúp bạn! 😊\n\nĐể giúp bạn hiểu rõ về API, tôi cần biết thêm chi tiết:\n\n1. **API nào?** (ví dụ: REST API, GraphQL, Web API, etc.)\n2. **Bạn đang học ngôn ngữ lập trình nào?** (Python, JavaScript, Java, etc.)\n3. **Câu hỏi cụ thể của bạn là gì?** (cách gọi API, xử lý response, authentication, etc.)\n\n**Tôi có thể giải thích:**\n- Khái niệm cơ bản về API\n- Cách thực hiện request HTTP\n- Cách xử lý response\n- Ví dụ code thực tế\n- Các best practices\n\nBạn vui lòng chia sẻ chi tiết hơn để tôi có thể giúp bạn một cách hiệu quả nhất! 👍",
+  "usage": {
+    "input_tokens": 322,
+    "output_tokens": 274
+  }
+}

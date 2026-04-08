@@ -1,0 +1,16 @@
+{
+  "detail": [
+    {
+      "type": "missing",
+      "loc": [
+        "body",
+        "conversation_id"
+      ],
+      "msg": "Field required",
+      "input": {
+        "username": "test_user",
+        "message": "Chào AI, bạn có thể giúp tôi với bài toán này không?"
+      }
+    }
+  ]
+}

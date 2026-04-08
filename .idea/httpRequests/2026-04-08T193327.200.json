@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "Xin chào! Tất nhiên tôi có thể giúp bạn với bài toán! 😊\n\nĐể tôi có thể hỗ trợ bạn tốt nhất, bạn vui lòng:\n\n1. **Chia sẻ bài toán cụ thể** của bạn\n2. **Nêu rõ chủ đề** (toán học, vật lý, hóa học, lập trình, etc.)\n3. **Cho biết level/cấp độ** (tiểu học, THCS, THPT, đại học, etc.)\n4. **Nêu những phần bạn đã cố gắng** hoặc **chỗ bạn bị khó hiểu**\n\nTôi sẽ:\n- Giải thích từng bước chi tiết\n- Cung cấp ví dụ minh họa\n- Giúp bạn hiểu nguyên lý, không chỉ đáp án\n\nBạn hãy gửi bài toán của bạn cho tôi nhé! 👍",
+  "usage": {
+    "input_tokens": 1087,
+    "output_tokens": 307
+  }
+}

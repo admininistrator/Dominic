@@ -1,0 +1,25 @@
+.container {
+  min-height: 0;
+  overflow: auto;
+  padding: 20px;
+  background: #0f172a;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+}
+
+.loading {
+  font-size: 13px;
+  color: #93c5fd;
+  padding: 0 8px;
+}

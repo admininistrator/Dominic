@@ -1,0 +1,39 @@
+.form {
+  border-top: 1px solid #1e293b;
+  background: #0b1220;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.textarea {
+  resize: none;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  font: inherit;
+}
+
+.textarea:focus {
+  border-color: #3b82f6;
+}
+
+.button {
+  min-width: 88px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

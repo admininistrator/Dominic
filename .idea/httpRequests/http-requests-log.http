@@ -1,0 +1,450 @@
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 72
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Github"
+}
+
+<> 2026-04-08T210550.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 87
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Microsoft 365 Copilot"
+}
+
+<> 2026-04-08T210053.403.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 82
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Microsoft Fabric"
+}
+
+<> 2026-04-08T204331.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 74
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Power BI"
+}
+
+<> 2026-04-08T203712.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 72
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Azure."
+}
+
+<> 2026-04-08T203619.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 88
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về Google Cloud Platform."
+}
+
+<> 2026-04-08T203111.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 73
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về OpenAI?"
+}
+
+<> 2026-04-08T202404.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 86
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user_1",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T201559.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T201505.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T201201.500.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T200953.422.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T200645.422.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 84
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Giới thiệu về bản thân bạn."
+}
+
+<> 2026-04-08T200607.422.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 112
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Chào AI, bạn có thể giúp tôi với bài toán này không?"
+}
+
+<> 2026-04-08T200147.422.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 112
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "username": "test_user",
+  "message": "Chào AI, bạn có thể giúp tôi với bài toán này không?"
+}
+
+<> 2026-04-08T200109.422.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 120
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "sender_user_id": 1,
+  "message": "Làm thế nào để học lập trình hiệu quả?"
+}
+
+<> 2026-04-08T195013.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 120
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "sender_user_id": 1,
+  "message": "Làm thế nào để học lập trình hiệu quả?"
+}
+
+<> 2026-04-08T194924.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 106
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Haylo, bạn có thể giúp tôi với bài toán này không?"
+}
+
+<> 2026-04-08T193327.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 95
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Toi muốn biết về lịch sử của Việt Nam."
+}
+
+<> 2026-04-08T192414.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 158
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Ai có thể giúp tôi với bài toán này không? Tôi đang cố gắng hiểu cách hoạt động của API."
+}
+
+<> 2026-04-08T181432.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 111
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Xin chào, bạn có thể giúp tôi với một câu hỏi không?"
+}
+
+<> 2026-04-08T180823.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 111
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Xin chào, bạn có thể giúp tôi với một câu hỏi không?"
+}
+
+<> 2026-04-08T175839.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 111
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Xin chào, bạn có thể giúp tôi với một câu hỏi không?"
+}
+
+<> 2026-04-08T175643.500.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 126
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Giải thích cho tôi về xác suất độc lập trong xác suất thống kê."
+}
+
+<> 2026-04-08T155647.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 126
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Giải thích cho tôi về xác suất độc lập trong xác suất thống kê."
+}
+
+<> 2026-04-08T154950.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 126
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Giải thích cho tôi về xác suất độc lập trong xác suất thống kê."
+}
+
+<> 2026-04-08T154738.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 118
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Xin chào, hãy giải thích ngắn gọn về cơ sở dữ liệu MySQL."
+}
+
+<> 2026-04-08T154354.200.json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/
+Content-Type: application/json
+Content-Length: 118
+User-Agent: IntelliJ HTTP Client/PyCharm 2024.3.5
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{
+  "conversation_id": 1,
+  "message": "Xin chào, hãy giải thích ngắn gọn về cơ sở dữ liệu MySQL."
+}
+
+<> 2026-04-08T154115.500.json
+
+###
+

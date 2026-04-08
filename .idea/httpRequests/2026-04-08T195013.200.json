@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "Tuyệt vời! Đây là một câu hỏi rất tốt! 💻\n\nDưới đây là những cách học lập trình hiệu quả:\n\n## **1. Chọn ngôn ngữ phù hợp**\n- Người mới: Python, JavaScript\n- Web: JavaScript, HTML/CSS\n- Mobile: Swift, Kotlin, React Native\n- Backend: Python, Java, Node.js\n\n## **2. Học cơ bản trước**\n- Biến, kiểu dữ liệu\n- Vòng lặp, câu điều kiện\n- Hàm, mảng, object\n- OOP (nếu cần)\n\n## **3. Thực hành thường xuyên**\n- Code mỗi ngày (ít nhất 1-2 giờ)\n- Làm bài tập, dự án nhỏ\n- Không chỉ đọc, mà phải gõ code\n\n## **4. Học từ nguồn tốt**\n- YouTube, Udemy, Coursera\n- Trang chủ ngôn ngữ\n- Sách lập trình\n\n## **5. Xây dựng dự án thực tế**\n- Todo app, Calculator\n- Weather app, Chat app\n- Portfolio website\n\n## **6. Tham gia cộng đồng**\n- GitHub, Stack Overflow\n- Forum, Discord communities\n\n## **7. Giải quyết vấn đề**\n- Debug khi gặp lỗi\n- Đọc error messages\n- Tìm hiểu tại sao lỗi xảy ra\n\n**Bạn muốn bắt đầu học ngôn ngữ nào?** Tôi có thể hỗ trợ chi tiết! 🚀",
+  "usage": {
+    "input_tokens": 1920,
+    "output_tokens": 482
+  }
+}

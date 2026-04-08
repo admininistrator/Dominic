@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "reply": "Xin chào! Tất nhiên rồi, tôi rất vui lòng giúp bạn! 😊\n\nVui lòng hỏi câu hỏi của bạn, tôi sẽ cố gắng trả lời một cách chi tiết và hữu ích nhất có thể.",
+  "usage": {
+    "input_tokens": 64,
+    "output_tokens": 94
+  }
+}

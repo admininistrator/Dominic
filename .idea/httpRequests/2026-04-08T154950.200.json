@@ -1,8 +1,0 @@
-{
-  "success": true,
-  "reply": "## Xác suất độc lập là gì?\n\nHai sự kiện A và B được gọi là **độc lập** khi việc xảy ra của sự kiện này **không ảnh hưởng** đến xác suất xảy ra của sự kiện kia.\n\n## Định nghĩa toán học:\n\nHai sự kiện A và B độc lập khi:\n```\nP(A|B) = P(A)  hoặc  P(B|A) = P(B)\n```\n\n**Công thức nhân xác suất:**\n```\nP(A ∩ B) = P(A) × P(B)\n```\n\n## Ví dụ thực tế:\n\n### 1. Tung đồng xu 2 lần\n- Sự kiện A: Lần 1 ra mặt ngửa\n- Sự kiện B: Lần 2 ra mặt ngửa\n- P(A) = 1/2, P(B) = 1/2\n- P(A ∩ B) = 1/2 × 1/2 = 1/4\n\n### 2. Rút bài (có hoàn lại)\n- Rút lá K đầu tiên: P(A) = 4/52\n- Rút lá K thứ hai (sau khi hoàn lại): P(B) = 4/52\n- P(cả 2 lần đều K) = 4/52 × 4/52\n\n## So sánh với sự kiện phụ thuộc:\n\n| Độc lập | Phụ thuộc |\n|---------|-----------|\n| P(A∩B) = P(A)×P(B) | P(A∩B) = P(A)×P(B\\|A) |\n| Tung 2 đồng xu | Rút bài không hoàn lại |\n| Thời tiết ở 2 thành phố xa | Điểm toán và điểm lý |\n\n## Cách kiểm tra tính độc lập:\n\n1. **Tính toán trực tiếp**: So sánh P(A∩B) với P(A)×P(B)\n2. **Kiểm tra điều kiện**: P(A|B) = P(A)?\n3. **Bảng crosstab**: Trong thống kê mô tả\n\n## Ứng dụng thực tế:\n- **Đánh giá rủi ro**: Bảo hiểm, tài chính\n- **Kiểm định thống kê**: Chi-square test\n- **Machine Learning**: Naive Bayes\n- **Mô phỏng**: Monte Carlo\n\nHiểu về tính độc lập giúp tính toán xác suất chính xác và tránh sai lầm trong phân tích dữ liệu.",
-  "usage": {
-    "input_tokens": 1217,
-    "output_tokens": 764
-  }
-}

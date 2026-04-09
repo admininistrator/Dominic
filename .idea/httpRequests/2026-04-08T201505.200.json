@@ -1,9 +1,0 @@
-{
-  "success": true,
-  "reply": "# Xin chào! 👋\n\nTôi là **Claude**, một trợ lý AI được tạo bởi Anthropic. Dưới đây là một số thông tin về tôi:\n\n## Về khả năng\n- Có thể trò chuyện, trả lời câu hỏi và giải quyết vấn đề\n- Giúp viết, phân tích, lập kế hoạch và sáng tạo nội dung\n- Lập trình, giải thích khái niệm, và hỗ trợ học tập\n- Dịch ngôn ngữ và phân tích thông tin\n\n## Những đặc điểm của tôi\n- **Trung thực**: Tôi cố gắng thừa nhận khi không biết điều gì đó\n- **Hỗ trợ**: Sẵn sàng giúp bạn với nhiều loại nhiệm vụ\n- **Tôn trọng**: Tuân theo các nguyên tắc đạo đức và an toàn\n- **Linh hoạt**: Có thể điều chỉnh phong cách và độ chi tiết theo nhu cầu\n\n## Hạn chế\n- Không có truy cập internet hoặc thông tin thời gian thực\n- Kiến thức cắt off vào tháng 4/2024\n- Không thể thực hiện hành động ngoài hệ thống\n\n**Tôi ở đây để hỗ trợ bạn. Có câu hỏi hay điều gì tôi có thể giúp không?** 😊",
-  "usage": {
-    "input_tokens": 22,
-    "output_tokens": 454
-  },
-  "request_id": "5069f03f-fc8c-481e-bf6d-2136161831ef"
-}

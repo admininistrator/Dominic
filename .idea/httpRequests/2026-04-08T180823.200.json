@@ -1,8 +1,0 @@
-{
-  "success": true,
-  "reply": "Xin chào! Vâng, tôi có thể giúp bạn. 😊\n\nBạn hãy đặt câu hỏi của bạn đi, tôi sẽ cố gắng hỗ trợ bạn một cách tốt nhất có thể.",
-  "usage": {
-    "input_tokens": 189,
-    "output_tokens": 88
-  }
-}

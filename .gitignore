@@ -1,2 +1,3 @@
 .env
 chatbot-ui/.env*
+.idea/

@@ -2,22 +2,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import chat
 from app.core.database import engine, Base
+import os
 
-# Tạo các bảng trong DB nếu chưa có
+# NOTE: Tam giu create_all cho nhanh. Production chuan nen doi sang migration.
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Chatbot AI Backend")
+app = FastAPI(title="Dominic Backend")
 
-# Cấu hình CORS để Next.js/React có thể gọi API
+def _parse_origins() -> list[str]:
+    raw = os.getenv("CORS_ORIGINS", "")
+    origins = [x.strip() for x in raw.split(",") if x.strip()]
+    # fallback local
+    return origins or ["http://localhost:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Trong production nên đổi thành domain cụ thể của frontend
+    allow_origins=_parse_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Đăng ký Router
-app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+@app.get("/health")
+def health():
+    return {"ok": True}
 
-# Khởi chạy bằng lệnh: uvicorn app.main:app --reload
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])

@@ -11,6 +11,32 @@ import {
 } from "./service/chatApi";
 import "./styles/globals.css";
 
+function extractErrorMessage(error, fallback = "Co loi khi goi API chat.") {
+  const status = error?.response?.status;
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === "string" && detail.trim()) {
+    return status ? `[${status}] ${detail}` : detail;
+  }
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0];
+    if (first?.msg) {
+      return status ? `[${status}] ${first.msg}` : first.msg;
+    }
+  }
+
+  if (error?.code === "ECONNABORTED") {
+    return "Timeout khi cho backend/AI tra loi. Thu rut ngan prompt hoac tang API timeout.";
+  }
+
+  if (!error?.response) {
+    return "Khong ket noi duoc backend (kiem tra server FastAPI, URL, CORS).";
+  }
+
+  return status ? `[${status}] ${fallback}` : fallback;
+}
+
 function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -118,8 +144,7 @@ export default function App() {
         await loadSessions(data.username);
       }
     } catch (error) {
-      const detail = error?.response?.data?.detail || "Dang nhap that bai.";
-      setLoginError(detail);
+      setLoginError(extractErrorMessage(error, "Dang nhap that bai."));
     } finally {
       setIsLoading(false);
     }
@@ -179,15 +204,18 @@ export default function App() {
       await refreshUsage(authUser);
       await loadSessions(authUser);
     } catch (error) {
-      const detail = error?.response?.data?.detail || "Co loi khi goi API chat.";
       const errorMessage = {
         id: createId(),
         role: "assistant",
-        content: `❌ ${detail}`,
+        content: `❌ ${extractErrorMessage(error, "Co loi khi goi API chat.")}`,
         animate: false,
       };
       setMessages((prev) => [...prev, errorMessage]);
-      await refreshUsage(authUser);
+      try {
+        await refreshUsage(authUser);
+      } catch {
+        // Ignore usage refresh failure to avoid masking original chat error.
+      }
     } finally {
       setIsLoading(false);
     }

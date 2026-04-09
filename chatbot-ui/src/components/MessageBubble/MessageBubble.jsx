@@ -29,7 +29,7 @@ export default function MessageBubble({ role, content, usage, animate = false })
   return (
     <div className={`${styles.row} ${isUser ? styles.userRow : styles.assistantRow}`}>
       <div className={`${styles.bubble} ${isUser ? styles.userBubble : styles.assistantBubble}`}>
-        <div className={styles.role}>{isUser ? "Bạn" : "AI"}</div>
+        <div className={styles.role}>{isUser ? "You" : "Dominic"}</div>
 
         {isUser ? (
           <p className={styles.plain}>{displayedContent}</p>

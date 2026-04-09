@@ -23,6 +23,7 @@ export default function ChatWindow({ messages, isLoading }) {
               role={msg.role}
               content={msg.content}
               usage={msg.usage}
+              animate={msg.animate}
             />
           ))}
           {isLoading && <div className={styles.loading}>AI đang trả lời...</div>}

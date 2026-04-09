@@ -2,9 +2,18 @@ import styles from "./Sidebar.module.css";
 
 export default function Sidebar({
   username,
+  sessions,
+  activeSessionId,
+  onCreateSession,
+  onSelectSession,
+  onLogout,
   totalTokenUsed,
   inputTokenUsed,
   outputTokenUsed,
+  lifetimeTotalTokenUsed,
+  lifetimeInputTokenUsed,
+  lifetimeOutputTokenUsed,
+  rollingWindowHours = 2,
   maxTokensPerDay = 10000,
 }) {
   const used = Number(totalTokenUsed || 0);
@@ -21,13 +30,35 @@ export default function Sidebar({
       <div className={styles.block}>
         <p className={styles.label}>Dang nhap voi user</p>
         <p className={styles.username}>{username}</p>
+        <button className={styles.logoutBtn} onClick={onLogout} type="button">
+          Log out
+        </button>
       </div>
 
       <div className={styles.block}>
-        <p className={styles.stat}>Total used: {used}</p>
-        <p className={styles.stat}>Input used: {inputTokenUsed}</p>
-        <p className={styles.stat}>Output used: {outputTokenUsed}</p>
-        <p className={styles.stat}>Limit/day: {max}</p>
+        <button className={styles.newChatBtn} onClick={onCreateSession} type="button">
+          + New chat
+        </button>
+        <div className={styles.sessionList}>
+          {sessions.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`${styles.sessionBtn} ${s.id === activeSessionId ? styles.sessionBtnActive : ""}`}
+              onClick={() => onSelectSession(s.id)}
+            >
+              {s.title || `Session ${s.id}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.block}>
+        <p className={styles.sectionTitle}>Quota hien tai (rolling {rollingWindowHours}h)</p>
+        <p className={styles.stat}>Used: {used}</p>
+        <p className={styles.stat}>Input: {inputTokenUsed}</p>
+        <p className={styles.stat}>Output: {outputTokenUsed}</p>
+        <p className={styles.stat}>Limit/{rollingWindowHours}h: {max}</p>
         <p className={styles.stat}>Remaining: {remain}</p>
 
         <div className={styles.progressWrap}>
@@ -39,9 +70,18 @@ export default function Sidebar({
 
         {(isWarning || isExceeded) && (
           <div className={`${styles.quotaWarning} ${isExceeded ? styles.exceeded : styles.warning}`}>
-            {isExceeded ? "Quota da vuot gioi han ngay." : "Sap cham quota ngay (>= 80%)."}
+            {isExceeded
+              ? `Quota ${rollingWindowHours}h da vuot gioi han.`
+              : `Sap cham quota ${rollingWindowHours}h (>= 80%).`}
           </div>
         )}
+      </div>
+
+      <div className={styles.block}>
+        <p className={styles.sectionTitle}>Tong tich luy (lifetime)</p>
+        <p className={styles.stat}>Total used: {Number(lifetimeTotalTokenUsed || 0)}</p>
+        <p className={styles.stat}>Input used: {Number(lifetimeInputTokenUsed || 0)}</p>
+        <p className={styles.stat}>Output used: {Number(lifetimeOutputTokenUsed || 0)}</p>
       </div>
     </aside>
   );

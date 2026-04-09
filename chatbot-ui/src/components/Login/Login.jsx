@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./Login.module.css";
 
 export default function Login({ onLogin, isLoading, error }) {
-  const [username, setUsername] = useState("test_user");
-  const [password, setPassword] = useState("123456");
+  const DEFAULT_USERNAME = "test_user";
+  const DEFAULT_PASSWORD = "123456";
+
+  const [username, setUsername] = useState(DEFAULT_USERNAME);
+  const [password, setPassword] = useState(DEFAULT_PASSWORD);
+
+  useEffect(() => {
+    setUsername(DEFAULT_USERNAME);
+    setPassword(DEFAULT_PASSWORD);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,6 +28,8 @@ export default function Login({ onLogin, isLoading, error }) {
         <label className={styles.label} htmlFor="username">Username</label>
         <input
           id="username"
+          name="username"
+          autoComplete="off"
           className={styles.input}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -29,6 +39,8 @@ export default function Login({ onLogin, isLoading, error }) {
         <label className={styles.label} htmlFor="password">Password</label>
         <input
           id="password"
+          name="password"
+          autoComplete="off"
           type="password"
           className={styles.input}
           value={password}

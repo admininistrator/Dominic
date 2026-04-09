@@ -30,6 +30,13 @@
   color: #94a3b8;
 }
 
+.sectionTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
 .username {
   margin: 6px 0 0;
   color: #e2e8f0;
@@ -37,10 +44,61 @@
   font-weight: 600;
 }
 
+.logoutBtn {
+  margin-top: 10px;
+  width: 100%;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logoutBtn:hover {
+  background: #334155;
+}
+
 .stat {
   margin: 6px 0;
   font-size: 14px;
   color: #cbd5e1;
+}
+
+.newChatBtn {
+  width: 100%;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sessionList {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.sessionBtn {
+  text-align: left;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.sessionBtnActive {
+  border-color: #3b82f6;
+  background: #172554;
 }
 
 .progressWrap {

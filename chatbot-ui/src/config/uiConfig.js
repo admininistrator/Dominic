@@ -1,0 +1,2 @@
+export const TYPEWRITER_INTERVAL_MS = 12;
+

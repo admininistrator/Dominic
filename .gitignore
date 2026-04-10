@@ -1,3 +1,5 @@
 .env
-chatbot-ui/.env*
+chatbot-ui/.env
+chatbot-ui/.env.local
+chatbot-ui/.env.*.local
 .idea/

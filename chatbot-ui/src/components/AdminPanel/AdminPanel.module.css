@@ -1,0 +1,328 @@
+.panel {
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+}
+
+/* ── Tab navigation ── */
+.tabBar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  margin-bottom: 4px;
+}
+
+.tabBtn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-muted, #6b7280);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tabBtn:hover {
+  color: var(--color-text, #111827);
+}
+
+.tabBtnActive {
+  color: var(--color-primary, #2563eb);
+  border-bottom-color: var(--color-primary, #2563eb);
+  font-weight: 600;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.analyticsSection {
+  display: grid;
+  gap: 14px;
+}
+
+.rowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.mutedText {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.analyticsCard,
+.eventCard,
+.breakdownCard {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.analyticsCard {
+  display: grid;
+  gap: 8px;
+}
+
+.analyticsCard strong {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.analyticsCard span {
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.breakdownCard {
+  display: grid;
+  gap: 12px;
+}
+
+.breakdownTitle {
+  margin: 0;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+.pillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.breakdownPill,
+.secondaryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+}
+
+.breakdownPill em {
+  font-style: normal;
+  color: #93c5fd;
+}
+
+.eventsList {
+  display: grid;
+  gap: 12px;
+}
+
+.userGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.userCard {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.userHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.username {
+  margin: 0;
+  color: #f8fafc;
+}
+
+.meta {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.roleBadge {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.roleUser {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.roleAdmin {
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+}
+
+.badgeStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.actionGroup,
+.resetRow {
+  display: flex;
+  gap: 10px;
+}
+
+.label {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.input {
+  width: 120px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.secondaryBtn {
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.resetGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.tokenBox {
+  display: grid;
+  gap: 8px;
+  border-radius: 12px;
+  background: #020617;
+  border: 1px solid #334155;
+  padding: 12px;
+}
+
+.tokenLabel {
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.code {
+  display: block;
+  overflow: auto;
+  color: #bfdbfe;
+  font-size: 12px;
+}
+
+.feedback {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.success {
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.error {
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+.emptyState {
+  border: 1px dashed #334155;
+  border-radius: 12px;
+  padding: 16px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .metaGrid,
+  .actionGroup,
+  .resetRow {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .input {
+    width: 100%;
+  }
+}
+

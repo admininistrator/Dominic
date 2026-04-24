@@ -1,8 +1,49 @@
 .container {
   min-height: 0;
-  overflow: auto;
-  padding: 20px;
-  background: #0f172a;
+  overflow-y: auto;
+  background: transparent;
+  padding: 0;
+  border-radius: 28px;
+}
+
+.inner {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 30px 12px;
+}
+
+.topBar {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 12px 30px 14px;
+}
+
+.topBarBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.14);
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scopeBanner {
+  max-width: 940px;
+  margin: 12px auto 0;
+  padding: 0 30px;
+}
+
+.scopeBannerInner {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 18px;
+  padding: 12px 16px;
+  font-size: 13px;
 }
 
 .list {
@@ -13,13 +54,91 @@
 
 .empty {
   height: 100%;
+  min-height: 360px;
   display: grid;
   place-items: center;
-  color: #94a3b8;
+  padding: 20px 0 60px;
+}
+
+.emptyHint {
+  text-align: center;
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 20px 45px rgba(148, 163, 184, 0.12);
+  border-radius: 32px;
+  padding: 32px 28px;
+}
+
+.emptyEyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.emptyHint h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+
+.emptyHint p {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.75;
 }
 
 .loading {
-  font-size: 13px;
-  color: #93c5fd;
-  padding: 0 8px;
+  font-size: 13.5px;
+  color: #6b7280;
+  padding: 4px 0 20px 58px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.loading::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a5b4fc;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@media (max-width: 960px) {
+  .topBar,
+  .scopeBanner,
+  .inner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .emptyHint {
+    padding: 24px 20px;
+    border-radius: 26px;
+  }
+
+  .emptyHint h2 {
+    font-size: 24px;
+  }
+}
+

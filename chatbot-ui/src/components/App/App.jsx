@@ -1,18 +1,20 @@
 import Sidebar from "../Sidebar/Sidebar";
-import ChatWindow from "../ChatWindow/ChatWindow";
-import ChatInput from "../ChatInput/ChatInput";
 import styles from "./App.module.css";
 
 export default function App({
-  username,
+  user,
+  activeView,
+  onChangeView,
   sessions,
   activeSessionId,
   onCreateSession,
   onSelectSession,
+  onDeleteSession,
+  onRenameSession,
   onLogout,
-  messages,
-  isLoading,
-  onSendMessage,
+  onChangePassword,
+  passwordPolicyHint,
+  isPasswordBusy,
   totalTokenUsed = 0,
   inputTokenUsed = 0,
   outputTokenUsed = 0,
@@ -21,16 +23,24 @@ export default function App({
   lifetimeOutputTokenUsed = 0,
   rollingWindowHours = 2,
   maxTokensPerDay = 10000,
+  children,
 }) {
   return (
     <div className={styles.layout}>
       <Sidebar
-        username={username}
+        user={user}
+        activeView={activeView}
+        onChangeView={onChangeView}
         sessions={sessions}
         activeSessionId={activeSessionId}
         onCreateSession={onCreateSession}
         onSelectSession={onSelectSession}
+        onDeleteSession={onDeleteSession}
+        onRenameSession={onRenameSession}
         onLogout={onLogout}
+        onChangePassword={onChangePassword}
+        passwordPolicyHint={passwordPolicyHint}
+        isPasswordBusy={isPasswordBusy}
         totalTokenUsed={totalTokenUsed}
         inputTokenUsed={inputTokenUsed}
         outputTokenUsed={outputTokenUsed}
@@ -41,13 +51,7 @@ export default function App({
         maxTokensPerDay={maxTokensPerDay}
       />
 
-      <main className={styles.main}>
-        <ChatWindow messages={messages} isLoading={isLoading} />
-        <ChatInput
-          disabled={!username || isLoading}
-          onSendMessage={onSendMessage}
-        />
-      </main>
+      <main className={styles.main}>{children}</main>
     </div>
   );
 }

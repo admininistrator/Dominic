@@ -1,16 +1,62 @@
-# React + Vite
+# Dominic Chatbot UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React + Vite cho dự án Dominic.
 
-Currently, two official plugins are available:
+## Phase 1 hiện tại
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- đăng ký tài khoản
+- đăng nhập bằng username/password
+- lưu bearer token trong `localStorage`
+- tự khôi phục phiên đăng nhập khi reload trang
+- gọi backend auth qua `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
+- gọi chat qua `/api/chat/*`
 
-## React Compiler
+## Phase 2 hiện tại
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- upload tài liệu qua `/api/knowledge/upload`
+- ingest raw text qua `/api/knowledge/ingest`
+- xem danh sách documents/chunks/jobs
+- search knowledge chunks đã index qua `/api/knowledge/search`
+- reindex và xóa document từ UI
 
-## Expanding the ESLint configuration
+## Chạy local
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+Mặc định frontend gọi backend ở:
+
+```text
+http://127.0.0.1:8000
+```
+
+## Environment
+
+Sao chép từ `.env.example` và chỉnh nếu cần:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_API_TIMEOUT_MS=120000
+```
+
+## Kiểm tra chất lượng
+
+```bash
+npm run lint
+npm run build
+```
+
+## Ghi chú auth
+
+- token hiện được lưu ở browser `localStorage`
+- khi backend đổi `AUTH_SECRET_KEY`, người dùng sẽ phải đăng nhập lại
+- khi frontend chạy khác domain với backend, cần cấu hình đúng `VITE_API_BASE_URL` và `CORS_ORIGINS` phía backend
+
+## Ghi chú knowledge base
+
+- upload file dùng `multipart/form-data` với field tên `file`
+- backend hiện có local indexing MVP: chunking + embedding metadata cục bộ + search trong DB
+- Phase 2 hiện chưa nối retrieval vào câu trả lời chat; knowledge search đang hoạt động độc lập ở Knowledge panel
+

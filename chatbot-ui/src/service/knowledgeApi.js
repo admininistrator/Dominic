@@ -1,11 +1,15 @@
 import apiClient from "./apiClient";
 
-export async function uploadKnowledgeFile(file, { asyncIndex = false } = {}) {
+export async function uploadKnowledgeFile(file, { asyncIndex = false, sessionId = null } = {}) {
   const formData = new FormData();
   formData.append("file", file, file?.name || "upload.bin");
 
+  const params = {};
+  if (asyncIndex) params.async_index = true;
+  if (sessionId) params.session_id = sessionId;
+
   const response = await apiClient.post("/api/knowledge/documents/upload", formData, {
-    params: asyncIndex ? { async_index: true } : {},
+    params,
   });
   return response.data;
 }
@@ -18,10 +22,11 @@ export async function ingestKnowledgeText({
   mime_type,
   metadata,
   asyncIndex = false,
+  session_id,
 }) {
   const response = await apiClient.post(
     "/api/knowledge/documents/ingest",
-    { title, raw_text, source_type, source_uri, mime_type, metadata },
+    { title, raw_text, source_type, source_uri, mime_type, metadata, session_id },
     { params: asyncIndex ? { async_index: true } : {} },
   );
   return response.data;
@@ -40,10 +45,12 @@ export async function pollJobUntilDone(jobId, { intervalMs = 1500, maxWaitMs = 6
   throw new Error(`Job ${jobId} did not finish within ${maxWaitMs / 1000}s`);
 }
 
-export async function listKnowledgeDocuments({ skip = 0, limit = 50 } = {}) {
-  const response = await apiClient.get("/api/knowledge/documents", {
-    params: { skip, limit },
-  });
+export async function listKnowledgeDocuments({ skip = 0, limit = 50, sessionId = null, sessionFilter = "all" } = {}) {
+  const params = { skip, limit };
+  if (sessionId) params.session_id = sessionId;
+  if (sessionFilter !== "all") params.session_filter = sessionFilter;
+
+  const response = await apiClient.get("/api/knowledge/documents", { params });
   return response.data;
 }
 

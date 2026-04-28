@@ -13,15 +13,10 @@ export default function App({
   onRenameSession,
   onLogout,
   onChangePassword,
-  passwordPolicyHint,
+  theme,
+  onThemeChange,
   isPasswordBusy,
   totalTokenUsed = 0,
-  inputTokenUsed = 0,
-  outputTokenUsed = 0,
-  lifetimeTotalTokenUsed = 0,
-  lifetimeInputTokenUsed = 0,
-  lifetimeOutputTokenUsed = 0,
-  rollingWindowHours = 2,
   maxTokensPerDay = 10000,
   children,
 }) {
@@ -39,15 +34,10 @@ export default function App({
         onRenameSession={onRenameSession}
         onLogout={onLogout}
         onChangePassword={onChangePassword}
-        passwordPolicyHint={passwordPolicyHint}
+        theme={theme}
+        onThemeChange={onThemeChange}
         isPasswordBusy={isPasswordBusy}
         totalTokenUsed={totalTokenUsed}
-        inputTokenUsed={inputTokenUsed}
-        outputTokenUsed={outputTokenUsed}
-        lifetimeTotalTokenUsed={lifetimeTotalTokenUsed}
-        lifetimeInputTokenUsed={lifetimeInputTokenUsed}
-        lifetimeOutputTokenUsed={lifetimeOutputTokenUsed}
-        rollingWindowHours={rollingWindowHours}
         maxTokensPerDay={maxTokensPerDay}
       />
 

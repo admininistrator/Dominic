@@ -100,13 +100,37 @@
 }
 
 .userBubble {
-  width: min(100%, 720px);
+  width: min(100%, 820px);
   margin-left: auto;
   background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
   border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 28px;
   padding: 18px 20px;
   box-shadow: 0 16px 32px rgba(148, 163, 184, 0.14);
+}
+
+.userDocuments {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.userDocumentChip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #c7d2fe;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .userImages {
@@ -203,7 +227,7 @@
 
 .userRow .roleLabel {
   flex-direction: row-reverse;
-  width: min(100%, 720px);
+  width: min(100%, 820px);
 }
 
 /* ── Markdown ── */
@@ -402,6 +426,95 @@
   line-height: 1.55;
   color: #475569;
   white-space: pre-wrap;
+}
+
+:global([data-theme="dark"]) .botLabel,
+:global([data-theme="dark"]) .bolt {
+  color: #a5b4fc;
+}
+
+:global([data-theme="dark"]) .userLabel,
+:global([data-theme="dark"]) .usage,
+:global([data-theme="dark"]) .retrievalMeta,
+:global([data-theme="dark"]) .sourceMeta {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .editBtn,
+:global([data-theme="dark"]) .regenerateBtn,
+:global([data-theme="dark"]) .actionBtn {
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .editBtn,
+:global([data-theme="dark"]) .regenerateBtn {
+  background: rgba(15, 23, 42, 0.76);
+  border-color: rgba(71, 85, 105, 0.42);
+}
+
+:global([data-theme="dark"]) .editBtn:hover,
+:global([data-theme="dark"]) .actionBtn:hover,
+:global([data-theme="dark"]) .regenerateBtn:hover {
+  background: rgba(30, 41, 59, 0.88);
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .avatarBot,
+:global([data-theme="dark"]) .assistantCard,
+:global([data-theme="dark"]) .userBubble,
+:global([data-theme="dark"]) .sourceCard,
+:global([data-theme="dark"]) .markdown pre {
+  background: rgba(10, 18, 33, 0.86);
+  border-color: rgba(71, 85, 105, 0.38);
+  box-shadow: 0 18px 34px rgba(2, 6, 23, 0.26);
+}
+
+:global([data-theme="dark"]) .avatarBot {
+  color: #c7d2fe;
+}
+
+:global([data-theme="dark"]) .userDocumentChip,
+:global([data-theme="dark"]) .markdown code {
+  background: rgba(30, 41, 59, 0.86);
+  border-color: rgba(99, 102, 241, 0.34);
+  color: #c7d2fe;
+}
+
+:global([data-theme="dark"]) .userText,
+:global([data-theme="dark"]) .markdown,
+:global([data-theme="dark"]) .markdown strong,
+:global([data-theme="dark"]) .markdown h1,
+:global([data-theme="dark"]) .markdown h2,
+:global([data-theme="dark"]) .markdown h3,
+:global([data-theme="dark"]) .sourcesTitle,
+:global([data-theme="dark"]) .sourceHeader,
+:global([data-theme="dark"]) .markdown pre code {
+  color: #e5eefc;
+}
+
+:global([data-theme="dark"]) .markdown em,
+:global([data-theme="dark"]) .sourceSnippet {
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .markdown blockquote {
+  border-left-color: rgba(129, 140, 248, 0.5);
+  background: rgba(30, 41, 59, 0.76);
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .markdown th,
+:global([data-theme="dark"]) .markdown td {
+  border-color: rgba(71, 85, 105, 0.48);
+}
+
+:global([data-theme="dark"]) .markdown th {
+  background: rgba(15, 23, 42, 0.94);
+  color: #e5eefc;
+}
+
+:global([data-theme="dark"]) .sourcesSection {
+  border-top-color: rgba(71, 85, 105, 0.36);
 }
 
 @media (max-width: 960px) {

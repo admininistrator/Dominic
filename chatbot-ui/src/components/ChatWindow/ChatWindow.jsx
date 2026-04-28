@@ -1,10 +1,14 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import MessageBubble from "../MessageBubble/MessageBubble";
 import styles from "./ChatWindow.module.css";
 
-export default function ChatWindow({ messages, isLoading, scopedDocument = null }) {
+export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
+  const visibleScopedDocuments = useMemo(
+    () => (Array.isArray(scopedDocuments) ? scopedDocuments.filter(Boolean) : []),
+    [scopedDocuments]
+  );
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -25,10 +29,13 @@ export default function ChatWindow({ messages, isLoading, scopedDocument = null 
         <div className={styles.topBarBadge}>Dominic</div>
       </div>
 
-      {scopedDocument && (
+      {visibleScopedDocuments.length > 0 && (
         <div className={styles.scopeBanner}>
           <div className={styles.scopeBannerInner}>
-            Chat đang ưu tiên knowledge document: <strong>{scopedDocument.title}</strong> (#{scopedDocument.id})
+            Chat đang ưu tiên tài liệu: {" "}
+            <strong>
+              {visibleScopedDocuments.map((document) => document.title).join(", ")}
+            </strong>
           </div>
         </div>
       )}
@@ -52,6 +59,7 @@ export default function ChatWindow({ messages, isLoading, scopedDocument = null 
                 role={msg.role}
                 content={msg.content}
                 images={msg.images}
+                documents={msg.documents}
                 sources={msg.sources}
                 retrieval={msg.retrieval}
                 usage={msg.usage}

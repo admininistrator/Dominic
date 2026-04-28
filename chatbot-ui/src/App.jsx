@@ -44,8 +44,7 @@ import "./styles/globals.css";
 const VIEW_CHAT = "chat";
 const VIEW_KNOWLEDGE = "knowledge";
 const VIEW_ADMIN = "admin";
-const PASSWORD_POLICY_HINT =
-  "Mật khẩu backend hiện tại yêu cầu tối thiểu 8 ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt và tối đa 64 ký tự.";
+const THEME_STORAGE_KEY = "dominic-ui-theme";
 
 const EMPTY_USAGE = {
   username: "",
@@ -100,6 +99,17 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function getInitialTheme() {
+  if (typeof window === "undefined") return "light";
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
+}
+
 function normalizeMessageImages(images) {
   return Array.isArray(images)
     ? images
@@ -111,13 +121,31 @@ function normalizeMessageImages(images) {
     : [];
 }
 
-function mapHistoryRowToUiMessage(row, images = []) {
+function normalizeMessageDocuments(documents) {
+  return Array.isArray(documents)
+    ? documents
+        .map((document) => {
+          if (typeof document === "string") {
+            return { id: null, title: document, session_id: null };
+          }
+          return {
+            id: document?.id ?? document?.document_id ?? null,
+            title: document?.title || document?.name || "",
+            session_id: document?.session_id ?? document?.sessionId ?? null,
+          };
+        })
+        .filter((document) => document.title)
+    : [];
+}
+
+function mapHistoryRowToUiMessage(row, images = [], documents = []) {
   const isAssistant = row.role === "assistant";
   return {
     id: row.id || createId(),
     role: row.role,
     content: row.content,
     images: normalizeMessageImages(images),
+    documents: normalizeMessageDocuments(documents),
     requestId: row.request_id,
     sources: isAssistant ? row.sources || [] : [],
     retrieval: isAssistant ? row.retrieval || null : null,
@@ -149,6 +177,7 @@ function buildChatErrorMessage(message) {
 
 export default function App() {
   const imageCacheRef = useRef(new Map());
+  const documentCacheRef = useRef(new Map());
   const activeSessionIdRef = useRef(null);
   const [authUser, setAuthUser] = useState(null);
   const [activeView, setActiveView] = useState(VIEW_CHAT);
@@ -172,9 +201,11 @@ export default function App() {
   const [isPasswordBusy, setIsPasswordBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [usage, setUsage] = useState(EMPTY_USAGE);
+  const [theme, setTheme] = useState(getInitialTheme);
 
   const resetAuthState = useCallback((nextError = "") => {
     imageCacheRef.current.clear();
+    documentCacheRef.current.clear();
     clearAuthToken();
     setAuthUser(null);
     setActiveView(VIEW_CHAT);
@@ -198,6 +229,12 @@ export default function App() {
     activeSessionIdRef.current = activeSessionId;
   }, [activeSessionId]);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
   const showChatLoadError = useCallback((error, fallback = "Không tải được lịch sử chat từ database.") => {
     setMessages([buildChatErrorMessage(extractErrorMessage(error, fallback))]);
   }, []);
@@ -217,6 +254,16 @@ export default function App() {
     [getImageCacheKey]
   );
 
+  const storeCachedMessageDocuments = useCallback(
+    (sessionId, requestId, documents = []) => {
+      const cacheKey = getImageCacheKey(sessionId, requestId);
+      const normalizedDocuments = normalizeMessageDocuments(documents);
+      if (!cacheKey || normalizedDocuments.length === 0) return;
+      documentCacheRef.current.set(cacheKey, normalizedDocuments);
+    },
+    [getImageCacheKey]
+  );
+
   const moveCachedMessageImages = useCallback(
     (sessionId, sourceRequestId, targetRequestId) => {
       const sourceKey = getImageCacheKey(sessionId, sourceRequestId);
@@ -232,6 +279,21 @@ export default function App() {
     [getImageCacheKey]
   );
 
+  const moveCachedMessageDocuments = useCallback(
+    (sessionId, sourceRequestId, targetRequestId) => {
+      const sourceKey = getImageCacheKey(sessionId, sourceRequestId);
+      const targetKey = getImageCacheKey(sessionId, targetRequestId);
+      if (!sourceKey || !targetKey || sourceKey === targetKey) return;
+
+      const cachedDocuments = documentCacheRef.current.get(sourceKey);
+      if (!cachedDocuments?.length) return;
+
+      documentCacheRef.current.set(targetKey, cachedDocuments);
+      documentCacheRef.current.delete(sourceKey);
+    },
+    [getImageCacheKey]
+  );
+
   const resolveMessageImages = useCallback(
     (sessionId, row) => {
       const explicitImages = normalizeMessageImages(row?.images);
@@ -239,6 +301,17 @@ export default function App() {
 
       const cacheKey = getImageCacheKey(sessionId, row?.request_id);
       return cacheKey ? imageCacheRef.current.get(cacheKey) || [] : [];
+    },
+    [getImageCacheKey]
+  );
+
+  const resolveMessageDocuments = useCallback(
+    (sessionId, row) => {
+      const explicitDocuments = normalizeMessageDocuments(row?.documents);
+      if (explicitDocuments.length > 0) return explicitDocuments;
+
+      const cacheKey = getImageCacheKey(sessionId, row?.request_id);
+      return cacheKey ? documentCacheRef.current.get(cacheKey) || [] : [];
     },
     [getImageCacheKey]
   );
@@ -274,8 +347,12 @@ export default function App() {
       const docs = await listKnowledgeDocuments();
       setKnowledgeDocuments(docs);
 
+      const activeSessionDocs = activeSessionId
+        ? docs.filter((doc) => doc.session_id === activeSessionId)
+        : [];
+
       const candidateId =
-        [preferredDocumentId, selectedKnowledgeDocumentId, docs[0]?.id].find(
+        [preferredDocumentId, selectedKnowledgeDocumentId, activeSessionDocs[0]?.id, docs[0]?.id].find(
           (docId) => docId && docs.some((doc) => doc.id === docId)
         ) || null;
 
@@ -290,7 +367,7 @@ export default function App() {
       await loadKnowledgeDocumentDetails(candidateId);
       return docs;
     },
-    [loadKnowledgeDocumentDetails, selectedKnowledgeDocumentId]
+    [activeSessionId, loadKnowledgeDocumentDetails, selectedKnowledgeDocumentId]
   );
 
   const loadAdminUsers = useCallback(async () => {
@@ -309,7 +386,11 @@ export default function App() {
     const { animateAssistantRequestId = null, applyIfActiveOnly = false } = options;
     const rows = await getSessionMessages(sessionId);
     const nextMessages = rows.map((row) => {
-      const mappedRow = mapHistoryRowToUiMessage(row, resolveMessageImages(sessionId, row));
+      const mappedRow = mapHistoryRowToUiMessage(
+        row,
+        resolveMessageImages(sessionId, row),
+        resolveMessageDocuments(sessionId, row)
+      );
       if (
         animateAssistantRequestId &&
         row.role === "assistant" &&
@@ -325,7 +406,7 @@ export default function App() {
     }
 
     return nextMessages;
-  }, [resolveMessageImages]);
+  }, [resolveMessageDocuments, resolveMessageImages]);
 
   const ensureSessionSelected = useCallback(
     async (preferredSessionId = null) => {
@@ -543,6 +624,7 @@ export default function App() {
       for (const key of imageCacheRef.current.keys()) {
         if (key.startsWith(`${sessionId}:`)) {
           imageCacheRef.current.delete(key);
+          documentCacheRef.current.delete(key);
         }
       }
       const rows = await loadSessions();
@@ -579,13 +661,37 @@ export default function App() {
     if (!authUser?.username || !activeSessionId) return;
 
     const targetSessionId = activeSessionId;
+    const sessionScopedDocuments = normalizeMessageDocuments(
+      knowledgeDocuments
+        .filter((document) => document.session_id === targetSessionId)
+        .map((document) => ({
+          id: document.id,
+          title: document.title,
+          session_id: document.session_id,
+        }))
+    );
+    const hasSessionScopedDocuments = sessionScopedDocuments.length > 0;
+    const selectedKnowledgeDocument =
+      knowledgeDocuments.find((document) => document.id === selectedKnowledgeDocumentId) || null;
+    const canUseSelectedKnowledgeDocument =
+      selectedKnowledgeDocument &&
+      (selectedKnowledgeDocument.session_id == null ||
+        selectedKnowledgeDocument.session_id === targetSessionId) &&
+      (!hasSessionScopedDocuments || selectedKnowledgeDocument.session_id === targetSessionId);
+    const effectiveKnowledgeDocumentId = canUseSelectedKnowledgeDocument
+      ? selectedKnowledgeDocument.id
+      : undefined;
 
     const normalizedImages = normalizeMessageImages(images);
     const optimisticMessageId = createId();
-    const optimisticRequestId = normalizedImages.length > 0 ? `pending:${optimisticMessageId}` : undefined;
+    const optimisticRequestId =
+      normalizedImages.length > 0 || sessionScopedDocuments.length > 0
+        ? `pending:${optimisticMessageId}`
+        : undefined;
 
     if (optimisticRequestId) {
       storeCachedMessageImages(targetSessionId, optimisticRequestId, normalizedImages);
+      storeCachedMessageDocuments(targetSessionId, optimisticRequestId, sessionScopedDocuments);
     }
 
     const userMessage = {
@@ -593,6 +699,7 @@ export default function App() {
       role: "user",
       content: text,
       images: normalizedImages,
+      documents: sessionScopedDocuments,
       requestId: optimisticRequestId,
       animate: false,
     };
@@ -604,15 +711,21 @@ export default function App() {
       const data = await sendChatMessage({
         session_id: targetSessionId,
         message: text,
-        knowledge_document_id: selectedKnowledgeDocumentId || undefined,
+        knowledge_document_id: effectiveKnowledgeDocumentId,
         images: images.length > 0 ? images : undefined,
       });
 
-      if (normalizedImages.length > 0 && data.request_id) {
+      if (optimisticRequestId && data.request_id) {
         moveCachedMessageImages(targetSessionId, optimisticRequestId, data.request_id);
+        moveCachedMessageDocuments(targetSessionId, optimisticRequestId, data.request_id);
         setMessages((prev) => prev.map((message) => (
           message.id === optimisticMessageId
-            ? { ...message, requestId: data.request_id, images: normalizedImages }
+            ? {
+                ...message,
+                requestId: data.request_id,
+                images: normalizedImages,
+                documents: sessionScopedDocuments,
+              }
             : message
         )));
       }
@@ -703,10 +816,10 @@ export default function App() {
     }
   };
 
-  const handleUploadKnowledgeFile = async (file) => {
+  const handleUploadKnowledgeFile = async (file, sessionId = null) => {
     setIsKnowledgeLoading(true);
     try {
-      const data = await uploadKnowledgeFile(file);
+      const data = await uploadKnowledgeFile(file, { sessionId });
       await loadKnowledgeDocuments(data.document_id);
       return {
         success: true,
@@ -725,10 +838,10 @@ export default function App() {
     }
   };
 
-  const handleIngestKnowledgeText = async (payload) => {
+  const handleIngestKnowledgeText = async (payload, sessionId = null) => {
     setIsKnowledgeLoading(true);
     try {
-      const data = await ingestKnowledgeText(payload);
+      const data = await ingestKnowledgeText({ ...payload, session_id: sessionId });
       await loadKnowledgeDocuments(data.document_id);
       return {
         success: true,
@@ -918,6 +1031,19 @@ export default function App() {
     );
   }
 
+  const currentSessionDocuments = activeSessionId
+    ? knowledgeDocuments.filter((document) => document.session_id === activeSessionId)
+    : [];
+  const selectedKnowledgeDocument =
+    knowledgeDocuments.find((document) => document.id === selectedKnowledgeDocumentId) || null;
+  const visibleScopedDocuments = currentSessionDocuments.length > 0
+    ? currentSessionDocuments
+    : selectedKnowledgeDocument &&
+      (selectedKnowledgeDocument.session_id == null ||
+        selectedKnowledgeDocument.session_id === activeSessionId)
+      ? [selectedKnowledgeDocument]
+      : [];
+
   let mainContent;
 
   if (activeView === VIEW_KNOWLEDGE) {
@@ -930,6 +1056,8 @@ export default function App() {
           jobs={knowledgeJobs}
           searchState={knowledgeSearch}
           isLoading={isKnowledgeLoading}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
           onSelectDocument={handleSelectKnowledgeDocument}
           onRefreshDocuments={handleRefreshKnowledgeDocuments}
           onUploadFile={handleUploadKnowledgeFile}
@@ -964,11 +1092,16 @@ export default function App() {
         <ChatWindow
           messages={messages}
           isLoading={isChatLoading}
-          scopedDocument={
-            knowledgeDocuments.find((doc) => doc.id === selectedKnowledgeDocumentId) || null
-          }
+          scopedDocuments={visibleScopedDocuments}
         />
-        <ChatInput disabled={!authUser?.username || isChatLoading} onSendMessage={handleSendMessage} />
+        <ChatInput 
+          disabled={!authUser?.username || isChatLoading} 
+          onSendMessage={handleSendMessage}
+          onUploadKnowledgeFile={(file) => handleUploadKnowledgeFile(file, activeSessionId)}
+          onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
+          isKnowledgeLoading={isKnowledgeLoading}
+          sessionDocuments={currentSessionDocuments}
+        />
       </div>
     );
   }
@@ -986,15 +1119,10 @@ export default function App() {
       onRenameSession={handleRenameSession}
       onLogout={handleLogout}
       onChangePassword={handleChangePassword}
-      passwordPolicyHint={PASSWORD_POLICY_HINT}
+      theme={theme}
+      onThemeChange={setTheme}
       isPasswordBusy={isPasswordBusy}
       totalTokenUsed={usage.total_token_used}
-      inputTokenUsed={usage.total_input_tokens_used}
-      outputTokenUsed={usage.total_output_tokens_used}
-      lifetimeTotalTokenUsed={usage.lifetime_total_token_used}
-      lifetimeInputTokenUsed={usage.lifetime_total_input_tokens_used}
-      lifetimeOutputTokenUsed={usage.lifetime_total_output_tokens_used}
-      rollingWindowHours={usage.rolling_window_hours}
       maxTokensPerDay={usage.max_tokens_per_day}
     >
       {mainContent}

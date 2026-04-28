@@ -1,6 +1,33 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "./KnowledgePanel.module.css";
 import { formatDate } from "../../utils/formatters";
+
+const IconBack = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const IconChat = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+
+const IconDoc = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
+
+const IconGlobe = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
 
 export default function KnowledgePanel({
   documents,
@@ -11,26 +38,23 @@ export default function KnowledgePanel({
   isLoading,
   onSelectDocument,
   onRefreshDocuments,
-  onUploadFile,
-  onIngestText,
   onSearchKnowledge,
   onReindexDocument,
   onDeleteDocument,
+  sessions = [],
+  activeSessionId,
 }) {
-  const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [title, setTitle] = useState("");
-  const [rawText, setRawText] = useState("");
-  const [sourceUri, setSourceUri] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchTopK, setSearchTopK] = useState(5);
-  const [searchScope, setSearchScope] = useState("all");
+  const searchTopK = 5;
+  const searchScope = "all";
   const [feedback, setFeedback] = useState({ type: "info", text: "" });
-  const [asyncMode, setAsyncMode] = useState(false);
-  const [jobStatus, setJobStatus] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // "list" | "session" | "detail"
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+
   const safeDocuments = useMemo(() => (Array.isArray(documents) ? documents : []), [documents]);
   const safeChunks = useMemo(() => (Array.isArray(chunks) ? chunks : []), [chunks]);
   const safeJobs = useMemo(() => (Array.isArray(jobs) ? jobs : []), [jobs]);
+  const safeSessions = useMemo(() => (Array.isArray(sessions) ? sessions : []), [sessions]);
   const safeSearchResults = useMemo(
     () => (Array.isArray(searchState?.results) ? searchState.results : []),
     [searchState]
@@ -41,64 +65,38 @@ export default function KnowledgePanel({
     [safeDocuments, selectedDocumentId]
   );
 
+  // Group documents by session
+  const globalDocs = useMemo(
+    () => safeDocuments.filter((doc) => !doc.session_id),
+    [safeDocuments]
+  );
+
+  const sessionDocsMap = useMemo(() => {
+    const map = new Map();
+    for (const doc of safeDocuments) {
+      if (doc.session_id) {
+        if (!map.has(doc.session_id)) map.set(doc.session_id, []);
+        map.get(doc.session_id).push(doc);
+      }
+    }
+    return map;
+  }, [safeDocuments]);
+
+  const sessionsWithDocs = useMemo(() => {
+    return safeSessions.filter((s) => sessionDocsMap.has(s.id));
+  }, [safeSessions, sessionDocsMap]);
+
+  const currentSessionDocs = useMemo(() => {
+    if (!selectedSessionId) return [];
+    return sessionDocsMap.get(selectedSessionId) || [];
+  }, [selectedSessionId, sessionDocsMap]);
+
   const setResult = (result, successFallback) => {
     if (!result) return;
     setFeedback({
       type: result.success ? "success" : "error",
       text: result.message || successFallback,
     });
-  };
-
-  const handleUploadSubmit = async (event) => {
-    event.preventDefault();
-    if (!selectedFile) {
-      setFeedback({ type: "error", text: "Vui lòng chọn tệp để upload." });
-      return;
-    }
-
-    setJobStatus(null);
-    const result = await onUploadFile(selectedFile, { asyncIndex: asyncMode });
-
-    if (asyncMode && result?.job_id) {
-      setFeedback({ type: "info", text: `Job #${result.job_id} đang xử lý... (document #${result.document_id})` });
-      setJobStatus({ id: result.job_id, status: "processing" });
-    } else {
-      setResult(result, "Tài liệu đã được upload và indexing.");
-    }
-
-    if (result?.document_id) {
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const handleTextSubmit = async (event) => {
-    event.preventDefault();
-    if (!title.trim() || !rawText.trim()) {
-      setFeedback({ type: "error", text: "Cần nhập tiêu đề và nội dung tài liệu." });
-      return;
-    }
-
-    setJobStatus(null);
-    const result = await onIngestText({
-      title: title.trim(),
-      raw_text: rawText.trim(),
-      source_uri: sourceUri.trim() || undefined,
-      asyncIndex: asyncMode,
-    });
-
-    if (asyncMode && result?.job_id) {
-      setFeedback({ type: "info", text: `Job #${result.job_id} đang xử lý... (document #${result.document_id})` });
-      setJobStatus({ id: result.job_id, status: "processing" });
-    } else {
-      setResult(result, "Tài liệu text đã được ingest.");
-    }
-
-    if (result?.document_id) {
-      setTitle("");
-      setRawText("");
-      setSourceUri("");
-    }
   };
 
   const handleReindex = async () => {
@@ -113,9 +111,11 @@ export default function KnowledgePanel({
       `Xóa tài liệu "${selectedDocument.title}" và toàn bộ chunks/index liên quan?`
     );
     if (!confirmed) return;
-
     const result = await onDeleteDocument(selectedDocument.id);
     setResult(result, "Đã xóa tài liệu.");
+    if (result?.success) {
+      setViewMode(selectedSessionId ? "session" : "list");
+    }
   };
 
   const handleSearchSubmit = async (event) => {
@@ -133,27 +133,217 @@ export default function KnowledgePanel({
     setResult(result, "Search knowledge thành công.");
   };
 
+  const handleSelectSession = (sessionId) => {
+    setSelectedSessionId(sessionId);
+    setViewMode("session");
+  };
+
+  const handleSelectDocInSession = async (docId) => {
+    setViewMode("detail");
+    await onSelectDocument(docId);
+  };
+
+  const handleBack = () => {
+    if (viewMode === "detail" && selectedSessionId) {
+      setViewMode("session");
+    } else {
+      setViewMode("list");
+      setSelectedSessionId(null);
+    }
+  };
+
+  // ── List view: sessions with docs + global docs ──
+  if (viewMode === "list") {
+    return (
+      <section className={styles.panel}>
+        <header className={styles.header}>
+          <div>
+            <h2 className={styles.title}>Knowledge base</h2>
+            <p className={styles.subtitle}>
+              Tài liệu knowledge được tổ chức theo từng đoạn chat. Import tài liệu bằng nút + trong thanh chat.
+            </p>
+          </div>
+          <div className={styles.headerActions}>
+            <button className={styles.secondaryBtn} type="button" onClick={onRefreshDocuments} disabled={isLoading}>
+              Làm mới
+            </button>
+          </div>
+        </header>
+
+        {feedback.text ? (
+          <div className={`${styles.feedback} ${feedback.type === "error" ? styles.error : styles.success}`}>
+            {feedback.text}
+          </div>
+        ) : null}
+
+        <div className={styles.listGrid}>
+          {/* Sessions with docs */}
+          {sessionsWithDocs.length > 0 && (
+            <div className={styles.sectionBlock}>
+              <h3 className={styles.sectionTitle}>
+                <IconChat /> Tài liệu theo đoạn chat
+              </h3>
+              <div className={styles.sessionList}>
+                {sessionsWithDocs.map((session) => {
+                  const docs = sessionDocsMap.get(session.id) || [];
+                  return (
+                    <button
+                      key={session.id}
+                      type="button"
+                      className={`${styles.sessionCard} ${session.id === activeSessionId ? styles.sessionCardActive : ""}`}
+                      onClick={() => handleSelectSession(session.id)}
+                    >
+                      <div className={styles.sessionCardHeader}>
+                        <IconChat />
+                        <span className={styles.sessionCardTitle}>{session.title || `Chat ${session.id}`}</span>
+                        {session.id === activeSessionId && (
+                          <span className={styles.activeBadge}>Active</span>
+                        )}
+                      </div>
+                      <div className={styles.sessionCardMeta}>
+                        <IconDoc />
+                        <span>{docs.length} tài liệu</span>
+                        <span className={styles.sessionCardDate}>{formatDate(session.updated_at)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Global docs */}
+          {globalDocs.length > 0 && (
+            <div className={styles.sectionBlock}>
+              <h3 className={styles.sectionTitle}>
+                <IconGlobe /> Tài liệu chung
+              </h3>
+              <div className={styles.documentList}>
+                {globalDocs.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    className={`${styles.documentBtn} ${doc.id === selectedDocumentId ? styles.documentBtnActive : ""}`}
+                    onClick={() => {
+                      setSelectedSessionId(null);
+                      setViewMode("detail");
+                      onSelectDocument(doc.id);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <span className={styles.documentTitle}>{doc.title}</span>
+                    <span className={styles.documentMeta}>#{doc.id} · {doc.status}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sessionsWithDocs.length === 0 && globalDocs.length === 0 && (
+            <div className={styles.emptyState}>
+              Chưa có tài liệu nào. Bấm nút <strong>+</strong> trong thanh chat để import tài liệu.
+            </div>
+          )}
+
+          {/* Search section */}
+          <div className={styles.card}>
+            <form onSubmit={handleSearchSubmit}>
+              <h3 className={styles.cardTitle}>Search knowledge base</h3>
+              <div className={styles.searchRow}>
+                <input
+                  className={styles.input}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Nhập câu truy vấn..."
+                  disabled={isLoading}
+                />
+                <button className={styles.primaryBtn} type="submit" disabled={isLoading || !searchQuery.trim()}>
+                  Search
+                </button>
+              </div>
+            </form>
+
+            {safeSearchResults.length > 0 && (
+              <div className={styles.chunkList}>
+                {safeSearchResults.map((result) => (
+                  <article key={`${result.document_id}-${result.chunk_id}`} className={styles.chunkCard}>
+                    <div className={styles.chunkHeader}>
+                      <span>{result.title}</span>
+                      <span>score {Number(result.score || 0).toFixed(3)}</span>
+                    </div>
+                    <pre className={styles.chunkContent}>{result.snippet}</pre>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Session view: docs in a specific session ──
+  if (viewMode === "session") {
+    const sessionInfo = safeSessions.find((s) => s.id === selectedSessionId);
+    return (
+      <section className={styles.panel}>
+        <header className={styles.header}>
+          <div className={styles.breadcrumb}>
+            <button type="button" className={styles.backBtn} onClick={handleBack}>
+              <IconBack /> Knowledge
+            </button>
+            <span className={styles.breadcrumbSep}>›</span>
+            <span className={styles.breadcrumbCurrent}>
+              {sessionInfo?.title || `Chat ${selectedSessionId}`}
+            </span>
+          </div>
+        </header>
+
+        <div className={styles.listGrid}>
+          <div className={styles.card}>
+            <div className={styles.rowHeader}>
+              <h3 className={styles.cardTitle}>Tài liệu trong đoạn chat</h3>
+              <span className={styles.badge}>{currentSessionDocs.length}</span>
+            </div>
+
+            {currentSessionDocs.length === 0 ? (
+              <div className={styles.emptyState}>Chưa có tài liệu nào trong đoạn chat này.</div>
+            ) : (
+              <div className={styles.documentList}>
+                {currentSessionDocs.map((doc) => (
+                  <button
+                    key={doc.id}
+                    type="button"
+                    className={`${styles.documentBtn} ${doc.id === selectedDocumentId ? styles.documentBtnActive : ""}`}
+                    onClick={() => handleSelectDocInSession(doc.id)}
+                    disabled={isLoading}
+                  >
+                    <span className={styles.documentTitle}>{doc.title}</span>
+                    <span className={styles.documentMeta}>
+                      #{doc.id} · {doc.status} · {formatDate(doc.created_at)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Detail view: single document details ──
   return (
     <section className={styles.panel}>
       <header className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Knowledge base</h2>
-          <p className={styles.subtitle}>
-            Đồng bộ với backend `/api/knowledge`: upload tài liệu, chunking, indexing skeleton và xem chunks.
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-          <label className={styles.asyncToggle}>
-            <input
-              type="checkbox"
-              checked={asyncMode}
-              onChange={(e) => setAsyncMode(e.target.checked)}
-            />
-            {" "}Async indexing
-          </label>
-          <button className={styles.secondaryBtn} type="button" onClick={onRefreshDocuments} disabled={isLoading}>
-            Làm mới danh sách
+        <div className={styles.breadcrumb}>
+          <button type="button" className={styles.backBtn} onClick={handleBack}>
+            <IconBack /> {selectedSessionId ? "Session" : "Knowledge"}
           </button>
+          <span className={styles.breadcrumbSep}>›</span>
+          <span className={styles.breadcrumbCurrent}>
+            {selectedDocument?.title || "Chi tiết tài liệu"}
+          </span>
         </div>
       </header>
 
@@ -163,281 +353,93 @@ export default function KnowledgePanel({
         </div>
       ) : null}
 
-      {jobStatus ? (
-        <div className={`${styles.feedback} ${jobStatus.status === "failed" ? styles.error : styles.success}`}>
-          Job #{jobStatus.id} — trạng thái: <strong>{jobStatus.status}</strong>
-          {jobStatus.status === "processing" || jobStatus.status === "pending"
-            ? " — đang xử lý, hãy làm mới danh sách để kiểm tra."
-            : jobStatus.status === "completed" || jobStatus.status === "indexed"
-              ? " — hoàn thành!"
-              : ""}
-        </div>
-      ) : null}
-
-      <div className={styles.grid}>
-        <div className={styles.column}>
-          <form className={styles.card} onSubmit={handleUploadSubmit}>
-            <h3 className={styles.cardTitle}>Upload tài liệu</h3>
-            <p className={styles.cardHint}>Hỗ trợ hiện tại: txt, md, csv, log, json, py, js, yaml/yml; PDF/DOCX nếu backend có dependency.</p>
-            <input
-              ref={fileInputRef}
-              className={styles.input}
-              type="file"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-              disabled={isLoading}
-            />
-            <button className={styles.primaryBtn} type="submit" disabled={isLoading || !selectedFile}>
-              {isLoading ? "Đang upload..." : "Upload + index"}
-            </button>
-          </form>
-
-          <form className={styles.card} onSubmit={handleTextSubmit}>
-            <h3 className={styles.cardTitle}>Ingest từ text</h3>
-            <label className={styles.label} htmlFor="knowledge-title">Tiêu đề</label>
-            <input
-              id="knowledge-title"
-              className={styles.input}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Ví dụ: Product FAQ"
-              disabled={isLoading}
-            />
-
-            <label className={styles.label} htmlFor="knowledge-uri">Source URI (tùy chọn)</label>
-            <input
-              id="knowledge-uri"
-              className={styles.input}
-              value={sourceUri}
-              onChange={(event) => setSourceUri(event.target.value)}
-              placeholder="https://example.com/docs/faq"
-              disabled={isLoading}
-            />
-
-            <label className={styles.label} htmlFor="knowledge-text">Nội dung</label>
-            <textarea
-              id="knowledge-text"
-              className={styles.textarea}
-              rows={10}
-              value={rawText}
-              onChange={(event) => setRawText(event.target.value)}
-              placeholder="Dán nội dung tài liệu vào đây..."
-              disabled={isLoading}
-            />
-
-            <button className={styles.primaryBtn} type="submit" disabled={isLoading || !title.trim() || !rawText.trim()}>
-              {isLoading ? "Đang ingest..." : "Ingest text"}
-            </button>
-          </form>
-
-          <form className={styles.card} onSubmit={handleSearchSubmit}>
-            <h3 className={styles.cardTitle}>Search indexed chunks</h3>
-            <p className={styles.cardHint}>
-              Query trên knowledge base đã index. Có thể search toàn bộ hoặc chỉ trong tài liệu đang chọn.
-            </p>
-
-            <label className={styles.label} htmlFor="knowledge-search-query">Query</label>
-            <input
-              id="knowledge-search-query"
-              className={styles.input}
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Ví dụ: release notes, product FAQ, beta gamma"
-              disabled={isLoading}
-            />
-
-            <label className={styles.label} htmlFor="knowledge-search-topk">Top K</label>
-            <input
-              id="knowledge-search-topk"
-              className={styles.input}
-              type="number"
-              min="1"
-              max="20"
-              value={searchTopK}
-              onChange={(event) => setSearchTopK(event.target.value)}
-              disabled={isLoading}
-            />
-
-            <label className={styles.label} htmlFor="knowledge-search-scope">Scope</label>
-            <select
-              id="knowledge-search-scope"
-              className={styles.input}
-              value={searchScope}
-              onChange={(event) => setSearchScope(event.target.value)}
-              disabled={isLoading}
-            >
-              <option value="all">Toàn bộ knowledge base</option>
-              <option value="selected" disabled={!selectedDocumentId}>Chỉ tài liệu đang chọn</option>
-            </select>
-
-            <button className={styles.primaryBtn} type="submit" disabled={isLoading || !searchQuery.trim()}>
-              {isLoading ? "Đang search..." : "Search knowledge"}
-            </button>
-          </form>
-        </div>
-
-        <div className={styles.columnWide}>
-          <div className={styles.card}>
-            <div className={styles.rowHeader}>
-              <h3 className={styles.cardTitle}>Documents</h3>
-              <span className={styles.badge}>{safeDocuments.length}</span>
-            </div>
-
-            {safeDocuments.length === 0 ? (
-              <div className={styles.emptyState}>Chưa có tài liệu nào trong knowledge base.</div>
-            ) : (
-              <div className={styles.documentList}>
-                {safeDocuments.map((doc) => (
-                  <button
-                    key={doc.id}
-                    type="button"
-                    className={`${styles.documentBtn} ${doc.id === selectedDocumentId ? styles.documentBtnActive : ""}`}
-                    onClick={() => onSelectDocument(doc.id)}
-                    disabled={isLoading}
-                  >
-                    <span className={styles.documentTitle}>{doc.title}</span>
-                    <span className={styles.documentMeta}>#{doc.id} · {doc.status}</span>
-                  </button>
-                ))}
+      <div className={styles.listGrid}>
+        <div className={styles.card}>
+          <div className={styles.rowHeader}>
+            <h3 className={styles.cardTitle}>Chi tiết tài liệu</h3>
+            {selectedDocument ? (
+              <div className={styles.actionRow}>
+                <button className={styles.secondaryBtn} type="button" onClick={handleReindex} disabled={isLoading}>
+                  Reindex
+                </button>
+                <button className={styles.dangerBtn} type="button" onClick={handleDelete} disabled={isLoading}>
+                  Xóa
+                </button>
               </div>
-            )}
-          </div>
-
-          <div className={styles.card}>
-            <div className={styles.rowHeader}>
-              <h3 className={styles.cardTitle}>Chi tiết tài liệu</h3>
-              {selectedDocument ? (
-                <div className={styles.actionRow}>
-                  <button className={styles.secondaryBtn} type="button" onClick={handleReindex} disabled={isLoading}>
-                    Reindex
-                  </button>
-                  <button className={styles.dangerBtn} type="button" onClick={handleDelete} disabled={isLoading}>
-                    Xóa
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
-            {!selectedDocument ? (
-              <div className={styles.emptyState}>Chọn một tài liệu để xem metadata và chunks.</div>
-            ) : (
-              <>
-                <div className={styles.metaGrid}>
-                  <div><strong>ID:</strong> {selectedDocument.id}</div>
-                  <div><strong>Status:</strong> {selectedDocument.status}</div>
-                  <div><strong>Owner:</strong> {selectedDocument.owner_username}</div>
-                  <div><strong>Source type:</strong> {selectedDocument.source_type}</div>
-                  <div><strong>MIME:</strong> {selectedDocument.mime_type || "-"}</div>
-                  <div><strong>Source URI:</strong> {selectedDocument.source_uri || "-"}</div>
-                  <div><strong>Created:</strong> {formatDate(selectedDocument.created_at)}</div>
-                  <div><strong>Updated:</strong> {formatDate(selectedDocument.updated_at)}</div>
-                </div>
-
-                <div className={styles.checksumBox}>
-                  <strong>Checksum:</strong>
-                  <code className={styles.code}>{selectedDocument.checksum || "-"}</code>
-                </div>
-
-                <div className={styles.rowHeader}>
-                  <h4 className={styles.subTitle}>Chunks</h4>
-                  <span className={styles.badge}>{safeChunks.length}</span>
-                </div>
-
-                {safeChunks.length === 0 ? (
-                  <div className={styles.emptyState}>Tài liệu này chưa có chunk hoặc chưa được index xong.</div>
-                ) : (
-                  <div className={styles.chunkList}>
-                    {safeChunks.map((chunk) => (
-                      <article key={chunk.id} className={styles.chunkCard}>
-                        <div className={styles.chunkHeader}>
-                          <span>Chunk #{chunk.chunk_index}</span>
-                          <span>{chunk.token_count || 0} tokens</span>
-                        </div>
-                        <pre className={styles.chunkContent}>{chunk.content}</pre>
-                      </article>
-                    ))}
-                  </div>
-                )}
-
-                <div className={styles.rowHeader}>
-                  <h4 className={styles.subTitle}>Ingestion jobs</h4>
-                  <span className={styles.badge}>{safeJobs.length}</span>
-                </div>
-
-                {safeJobs.length === 0 ? (
-                  <div className={styles.emptyState}>Chưa có ingestion job nào cho tài liệu này.</div>
-                ) : (
-                  <div className={styles.documentList}>
-                    {safeJobs.map((job) => (
-                      <article key={job.id} className={styles.chunkCard}>
-                        <div className={styles.chunkHeader}>
-                          <span>Job #{job.id}</span>
-                          <span>{job.status}</span>
-                        </div>
-                        <div className={styles.metaGrid}>
-                          <div><strong>Created:</strong> {formatDate(job.created_at)}</div>
-                          <div><strong>Updated:</strong> {formatDate(job.updated_at)}</div>
-                        </div>
-                        {job.error_message ? (
-                          <pre className={styles.chunkContent}>{job.error_message}</pre>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className={styles.card}>
-            <div className={styles.rowHeader}>
-              <h3 className={styles.cardTitle}>Search results</h3>
-              <span className={styles.badge}>{safeSearchResults.length}</span>
-            </div>
-
-            {searchState?.query ? (
-              <p className={styles.cardHint}>
-                Query: <strong>{searchState.query}</strong>
-                {searchState?.retrieval_id ? ` · retrieval #${searchState.retrieval_id}` : ""}
-                {searchState?.strategy ? ` · ${searchState.strategy}` : ""}
-                {searchState?.evidence_strength ? ` · ${searchState.evidence_strength}` : ""}
-                {searchState?.fallback_used && searchState?.fallback_reason
-                  ? ` · fallback:${searchState.fallback_reason}`
-                  : ""}
-                {searchState?.rewritten_query && searchState.rewritten_query !== searchState.query
-                  ? ` · rewritten: ${searchState.rewritten_query}`
-                  : ""}
-              </p>
             ) : null}
-
-            {safeSearchResults.length === 0 ? (
-              <div className={styles.emptyState}>Chưa có kết quả search nào. Hãy nhập query để kiểm tra khả năng retrieval.</div>
-            ) : (
-              <div className={styles.chunkList}>
-                {safeSearchResults.map((result) => (
-                  <article key={`${result.document_id}-${result.chunk_id}`} className={styles.chunkCard}>
-                    <div className={styles.chunkHeader}>
-                      <span>{result.title}</span>
-                      <span>score {Number(result.score || 0).toFixed(3)}</span>
-                    </div>
-                    <div className={styles.metaGrid}>
-                      <div><strong>Document:</strong> #{result.document_id}</div>
-                      <div><strong>Chunk:</strong> #{result.chunk_index}</div>
-                      <div><strong>Source type:</strong> {result.source_type}</div>
-                      <div><strong>Embedding:</strong> {result.embedding_model || "-"}</div>
-                      <div><strong>Semantic:</strong> {Number(result.semantic_score || 0).toFixed(3)}</div>
-                      <div><strong>Lexical:</strong> {Number(result.lexical_score || 0).toFixed(3)}</div>
-                    </div>
-                    <pre className={styles.chunkContent}>{result.snippet}</pre>
-                  </article>
-                ))}
-              </div>
-            )}
           </div>
+
+          {!selectedDocument ? (
+            <div className={styles.emptyState}>Chọn một tài liệu để xem metadata và chunks.</div>
+          ) : (
+            <>
+              <div className={styles.metaGrid}>
+                <div><strong>ID:</strong> {selectedDocument.id}</div>
+                <div><strong>Status:</strong> {selectedDocument.status}</div>
+                <div><strong>Owner:</strong> {selectedDocument.owner_username}</div>
+                <div><strong>Source type:</strong> {selectedDocument.source_type}</div>
+                <div><strong>MIME:</strong> {selectedDocument.mime_type || "-"}</div>
+                <div><strong>Source URI:</strong> {selectedDocument.source_uri || "-"}</div>
+                <div><strong>Session:</strong> {selectedDocument.session_id ? `#${selectedDocument.session_id}` : "Global"}</div>
+                <div><strong>Created:</strong> {formatDate(selectedDocument.created_at)}</div>
+              </div>
+
+              <div className={styles.checksumBox}>
+                <strong>Checksum:</strong>
+                <code className={styles.code}>{selectedDocument.checksum || "-"}</code>
+              </div>
+
+              <div className={styles.rowHeader}>
+                <h4 className={styles.subTitle}>Chunks</h4>
+                <span className={styles.badge}>{safeChunks.length}</span>
+              </div>
+
+              {safeChunks.length === 0 ? (
+                <div className={styles.emptyState}>Tài liệu này chưa có chunk hoặc chưa được index xong.</div>
+              ) : (
+                <div className={styles.chunkList}>
+                  {safeChunks.map((chunk) => (
+                    <article key={chunk.id} className={styles.chunkCard}>
+                      <div className={styles.chunkHeader}>
+                        <span>Chunk #{chunk.chunk_index}</span>
+                        <span>{chunk.token_count || 0} tokens</span>
+                      </div>
+                      <pre className={styles.chunkContent}>{chunk.content}</pre>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.rowHeader}>
+                <h4 className={styles.subTitle}>Ingestion jobs</h4>
+                <span className={styles.badge}>{safeJobs.length}</span>
+              </div>
+
+              {safeJobs.length === 0 ? (
+                <div className={styles.emptyState}>Chưa có ingestion job nào cho tài liệu này.</div>
+              ) : (
+                <div className={styles.documentList}>
+                  {safeJobs.map((job) => (
+                    <article key={job.id} className={styles.chunkCard}>
+                      <div className={styles.chunkHeader}>
+                        <span>Job #{job.id}</span>
+                        <span>{job.status}</span>
+                      </div>
+                      <div className={styles.metaGrid}>
+                        <div><strong>Created:</strong> {formatDate(job.created_at)}</div>
+                        <div><strong>Updated:</strong> {formatDate(job.updated_at)}</div>
+                      </div>
+                      {job.error_message ? (
+                        <pre className={styles.chunkContent}>{job.error_message}</pre>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </section>
   );
 }
-
-
-

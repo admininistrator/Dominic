@@ -101,6 +101,7 @@ export default function MessageBubble({
   retrieval = null,
   animate = false,
   images = [],
+  documents = [],
 }) {
   const isUser = role === "user";
   const shouldAnimate = !isUser && animate;
@@ -111,6 +112,17 @@ export default function MessageBubble({
           return image?.dataUri || image?.url || "";
         })
         .filter(Boolean)
+    : [];
+  const normalizedDocuments = Array.isArray(documents)
+    ? documents
+        .map((document) => {
+          if (typeof document === "string") return { id: null, title: document };
+          return {
+            id: document?.id ?? document?.document_id ?? null,
+            title: document?.title || document?.name || "",
+          };
+        })
+        .filter((document) => document.title)
     : [];
   const [displayedContent, setDisplayedContent] = useState(
     shouldAnimate ? "" : content
@@ -189,6 +201,18 @@ export default function MessageBubble({
         {/* Content */}
         {isUser ? (
           <div className={styles.userBubble}>
+            {normalizedDocuments.length > 0 && (
+              <div className={styles.userDocuments}>
+                {normalizedDocuments.map((document) => (
+                  <span
+                    key={`${document.id || document.title}-document-chip`}
+                    className={styles.userDocumentChip}
+                  >
+                    {document.title}
+                  </span>
+                ))}
+              </div>
+            )}
             {normalizedImages.length > 0 && (
               <div className={styles.userImages}>
                 {normalizedImages.map((image, index) => (

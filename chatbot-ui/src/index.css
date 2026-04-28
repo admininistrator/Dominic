@@ -1,12 +1,11 @@
 :root {
-  color-scheme: light;
   font: 16px/1.5 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #edf2ff;
-  color: #111827;
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 html,
@@ -14,8 +13,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 32%),
-    linear-gradient(180deg, #eef2ff 0%, #f7f9fc 36%, #f3f5f9 100%);
+    radial-gradient(circle at top left, var(--app-bg-radial), transparent 32%),
+    linear-gradient(180deg, var(--app-bg-top) 0%, var(--app-bg-mid) 36%, var(--app-bg-bottom) 100%);
+  color: var(--app-text);
 }
 
 body {

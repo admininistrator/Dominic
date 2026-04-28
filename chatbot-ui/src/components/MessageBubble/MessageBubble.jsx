@@ -151,6 +151,12 @@ export default function MessageBubble({
     });
   };
 
+  const buildSourceKey = (source) => [
+    source.source_type || "knowledge",
+    source.document_id ?? source.url ?? source.title,
+    source.chunk_id ?? source.rank ?? "src",
+  ].join("-");
+
   return (
     <div
       className={`${styles.row} ${
@@ -248,6 +254,7 @@ export default function MessageBubble({
                   className={styles.actionBtn}
                   onClick={() => setShowSources((v) => !v)}
                   title="Nguồn tham chiếu"
+                  data-testid="toggle-sources-button"
                 >
                   <IconMore />
                 </button>
@@ -259,12 +266,13 @@ export default function MessageBubble({
 
         {/* Sources */}
         {!isUser && showSources && Array.isArray(sources) && sources.length > 0 && (
-          <div className={styles.sourcesSection}>
+          <div className={styles.sourcesSection} data-testid="sources-section">
             <div className={styles.sourcesTitle}>Nguồn tham chiếu</div>
             {sources.map((source) => (
               <article
-                key={`${source.document_id}-${source.chunk_id}-${source.rank || "src"}`}
+                key={buildSourceKey(source)}
                 className={styles.sourceCard}
+                data-testid="source-card"
               >
                 <div className={styles.sourceHeader}>
                   <span>
@@ -275,8 +283,20 @@ export default function MessageBubble({
                   )}
                 </div>
                 <div className={styles.sourceMeta}>
-                  doc #{source.document_id} · chunk #{source.chunk_id}
+                  {source.source_type === "web"
+                    ? `${source.domain || "web"}${source.url ? " · nguồn ngoài" : ""}`
+                    : `doc #${source.document_id} · chunk #${source.chunk_id}`}
                 </div>
+                {source.url && (
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.sourceLink}
+                  >
+                    {source.url}
+                  </a>
+                )}
                 <div className={styles.sourceSnippet}>{source.snippet}</div>
               </article>
             ))}

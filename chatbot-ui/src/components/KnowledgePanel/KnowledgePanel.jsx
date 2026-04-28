@@ -164,7 +164,7 @@ export default function KnowledgePanel({
             </p>
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.secondaryBtn} type="button" onClick={onRefreshDocuments} disabled={isLoading}>
+            <button className={styles.secondaryBtn} type="button" onClick={onRefreshDocuments} disabled={isLoading} data-testid="knowledge-refresh-button">
               Làm mới
             </button>
           </div>
@@ -192,6 +192,7 @@ export default function KnowledgePanel({
                       type="button"
                       className={`${styles.sessionCard} ${session.id === activeSessionId ? styles.sessionCardActive : ""}`}
                       onClick={() => handleSelectSession(session.id)}
+                      data-testid={`knowledge-session-${session.id}`}
                     >
                       <div className={styles.sessionCardHeader}>
                         <IconChat />
@@ -230,6 +231,7 @@ export default function KnowledgePanel({
                       onSelectDocument(doc.id);
                     }}
                     disabled={isLoading}
+                    data-testid={`knowledge-document-${doc.id}`}
                   >
                     <span className={styles.documentTitle}>{doc.title}</span>
                     <span className={styles.documentMeta}>#{doc.id} · {doc.status}</span>
@@ -256,8 +258,9 @@ export default function KnowledgePanel({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Nhập câu truy vấn..."
                   disabled={isLoading}
+                  data-testid="knowledge-search-input"
                 />
-                <button className={styles.primaryBtn} type="submit" disabled={isLoading || !searchQuery.trim()}>
+                <button className={styles.primaryBtn} type="submit" disabled={isLoading || !searchQuery.trim()} data-testid="knowledge-search-button">
                   Search
                 </button>
               </div>
@@ -266,7 +269,7 @@ export default function KnowledgePanel({
             {safeSearchResults.length > 0 && (
               <div className={styles.chunkList}>
                 {safeSearchResults.map((result) => (
-                  <article key={`${result.document_id}-${result.chunk_id}`} className={styles.chunkCard}>
+                  <article key={`${result.document_id}-${result.chunk_id}`} className={styles.chunkCard} data-testid="knowledge-search-result">
                     <div className={styles.chunkHeader}>
                       <span>{result.title}</span>
                       <span>score {Number(result.score || 0).toFixed(3)}</span>
@@ -317,6 +320,7 @@ export default function KnowledgePanel({
                     className={`${styles.documentBtn} ${doc.id === selectedDocumentId ? styles.documentBtnActive : ""}`}
                     onClick={() => handleSelectDocInSession(doc.id)}
                     disabled={isLoading}
+                    data-testid={`knowledge-document-${doc.id}`}
                   >
                     <span className={styles.documentTitle}>{doc.title}</span>
                     <span className={styles.documentMeta}>
@@ -337,7 +341,7 @@ export default function KnowledgePanel({
     <section className={styles.panel}>
       <header className={styles.header}>
         <div className={styles.breadcrumb}>
-          <button type="button" className={styles.backBtn} onClick={handleBack}>
+          <button type="button" className={styles.backBtn} onClick={handleBack} data-testid="knowledge-back-button">
             <IconBack /> {selectedSessionId ? "Session" : "Knowledge"}
           </button>
           <span className={styles.breadcrumbSep}>›</span>
@@ -359,10 +363,10 @@ export default function KnowledgePanel({
             <h3 className={styles.cardTitle}>Chi tiết tài liệu</h3>
             {selectedDocument ? (
               <div className={styles.actionRow}>
-                <button className={styles.secondaryBtn} type="button" onClick={handleReindex} disabled={isLoading}>
+                <button className={styles.secondaryBtn} type="button" onClick={handleReindex} disabled={isLoading} data-testid="knowledge-reindex-button">
                   Reindex
                 </button>
-                <button className={styles.dangerBtn} type="button" onClick={handleDelete} disabled={isLoading}>
+                <button className={styles.dangerBtn} type="button" onClick={handleDelete} disabled={isLoading} data-testid="knowledge-delete-button">
                   Xóa
                 </button>
               </div>

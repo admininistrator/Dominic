@@ -5,12 +5,14 @@ export async function sendChatMessage({
   session_id,
   message,
   knowledge_document_id,
+  use_web_search,
   images,          // [{dataUri, type}] – optional
   image_media_types, // [string] – optional
 }) {
   const payload = { session_id, message };
   if (username) payload.username = username;
   if (knowledge_document_id) payload.knowledge_document_id = knowledge_document_id;
+  if (use_web_search) payload.use_web_search = true;
 
   // Attach vision images when present
   if (images && images.length > 0) {

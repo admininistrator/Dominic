@@ -260,7 +260,7 @@ export default function Sidebar({
       {/* ── New Chat + Search row ── */}
       {activeView === "chat" && (
         <div className={styles.actionRow}>
-          <button className={styles.newChatBtn} onClick={onCreateSession} type="button">
+          <button className={styles.newChatBtn} onClick={onCreateSession} type="button" data-testid="new-chat-button">
             <span className={styles.newChatPlus}>+</span> New chat
           </button>
           <button
@@ -289,10 +289,10 @@ export default function Sidebar({
 
       {/* ── Nav tabs ── */}
       <nav className={styles.nav}>
-        <button className={`${styles.navItem} ${activeView === "chat" ? styles.navItemActive : ""}`} onClick={() => onChangeView("chat")}>
+        <button className={`${styles.navItem} ${activeView === "chat" ? styles.navItemActive : ""}`} onClick={() => onChangeView("chat")} data-testid="nav-chat-button">
           <IconChat /> Chat
         </button>
-        <button className={`${styles.navItem} ${activeView === "knowledge" ? styles.navItemActive : ""}`} onClick={() => onChangeView("knowledge")}>
+        <button className={`${styles.navItem} ${activeView === "knowledge" ? styles.navItemActive : ""}`} onClick={() => onChangeView("knowledge")} data-testid="nav-knowledge-button">
           <IconKnowledge /> Knowledge
         </button>
         {role === "admin" && (
@@ -331,12 +331,14 @@ export default function Sidebar({
                               if (e.key === "Escape") setEditingSessionId(null);
                             }}
                             onClick={e => e.stopPropagation()}
+                            data-testid={`rename-session-input-${s.id}`}
                           />
                         ) : (
                           <button
                             type="button"
                             className={styles.sessionBtn}
                             onClick={() => onSelectSession(s.id)}
+                            data-testid={`sidebar-session-${s.id}`}
                           >
                             <IconChat />
                             <span className={styles.sessionTitle}>{s.title || `Session ${s.id}`}</span>
@@ -351,6 +353,7 @@ export default function Sidebar({
                             title="Đổi tên"
                             onClick={(e) => startRename(s, e)}
                             type="button"
+                            data-testid={`rename-session-button-${s.id}`}
                           >
                             <IconPencil />
                           </button>
@@ -359,6 +362,7 @@ export default function Sidebar({
                             title="Xóa"
                             onClick={(e) => { e.stopPropagation(); onDeleteSession?.(s.id); }}
                             type="button"
+                            data-testid={`delete-session-button-${s.id}`}
                           >
                             <IconTrash />
                           </button>
@@ -397,6 +401,7 @@ export default function Sidebar({
             type="button"
             aria-expanded={accountMenuMounted}
             aria-controls="sidebar-account-menu"
+            data-testid="account-menu-button"
           >
             <div className={`${styles.userCard} ${accountMenuMounted ? styles.userCardActive : ""}`}>
               <div className={styles.userRow}>
@@ -428,6 +433,7 @@ export default function Sidebar({
                   className={`${styles.accountTabBtn} ${isSettingsTabActive ? styles.accountTabBtnActive : ""}`}
                   type="button"
                   onClick={() => handleAccountTabToggle("settings")}
+                  data-testid="account-settings-tab"
                 >
                   <IconSettings />
                   <span>Settings</span>
@@ -504,15 +510,16 @@ export default function Sidebar({
                       title="Đăng xuất"
                       type="button"
                       aria-expanded={logoutConfirmOpen}
+                      data-testid="logout-button"
                     >
                       <IconLogout />
                       <span>Log out</span>
                     </button>
                     <div className={`${styles.logoutConfirmPanel} ${logoutConfirmOpen ? styles.logoutConfirmPanelOpen : ""}`}>
-                      <div className={styles.logoutConfirmInner}>
+                      <div className={styles.logoutConfirmInner} data-testid="logout-confirm-panel">
                         <p className={styles.logoutConfirmText}>Bạn có muốn đăng xuất khỏi tài khoản này không?</p>
                         <div className={styles.logoutConfirmActions}>
-                          <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button">
+                          <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button" data-testid="logout-confirm-button">
                             Xác nhận đăng xuất
                           </button>
                         </div>

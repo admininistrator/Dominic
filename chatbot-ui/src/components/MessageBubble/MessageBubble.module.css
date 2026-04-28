@@ -420,6 +420,19 @@
   font-size: 11px;
   color: #94a3b8;
 }
+.sourceLink {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #2563eb;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
+}
+
 .sourceSnippet {
   margin-top: 6px;
   font-size: 13px;
@@ -438,6 +451,10 @@
 :global([data-theme="dark"]) .retrievalMeta,
 :global([data-theme="dark"]) .sourceMeta {
   color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .sourceLink {
+  color: #7dd3fc;
 }
 
 :global([data-theme="dark"]) .editBtn,

@@ -1,0 +1,57 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - chatbot-ui/**
+      - .github/workflows/frontend-ci.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - chatbot-ui/**
+      - .github/workflows/frontend-ci.yml
+
+jobs:
+  quality:
+    name: Lint, Build, and E2E Smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-ui
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: chatbot-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright smoke suite
+        run: npm run test:e2e -- tests/e2e
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            chatbot-ui/playwright-report
+            chatbot-ui/test-results

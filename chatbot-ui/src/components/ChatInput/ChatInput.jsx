@@ -76,6 +76,7 @@ export default function ChatInput({
   const [ingestTitle, setIngestTitle] = useState("");
   const [ingestText, setIngestText] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [useWebSearch, setUseWebSearch] = useState(false);
   const fileInputRef = useRef(null);
   const knowledgeFileRef = useRef(null);
   const plusMenuRef = useRef(null);
@@ -155,7 +156,9 @@ export default function ChatInput({
   const submit = () => {
     const value = text.trim();
     if ((!value && images.length === 0) || disabled) return;
-    onSendMessage(value, images.map((i) => ({ dataUri: i.dataUri, type: i.type })));
+    onSendMessage(value, images.map((i) => ({ dataUri: i.dataUri, type: i.type })), {
+      useWebSearch,
+    });
     setText("");
     setImages([]);
   };
@@ -278,6 +281,7 @@ export default function ChatInput({
               onPaste={handlePaste}
               placeholder="Nhắn Dominic..."
               disabled={disabled}
+              data-testid="chat-textarea"
             />
             <div className={styles.inputFooter}>
               <div className={styles.importArea} ref={plusMenuRef}>
@@ -286,6 +290,7 @@ export default function ChatInput({
                   className={`${styles.plusButton} ${importPanelMounted ? styles.plusButtonActive : ""}`}
                   onClick={toggleImportPanel}
                   title="Import Source"
+                  data-testid="chat-import-button"
                 >
                   <IconPlus />
                 </button>
@@ -307,6 +312,7 @@ export default function ChatInput({
                           className={styles.plusPopupBtn}
                           disabled={isKnowledgeLoading}
                           onClick={() => knowledgeFileRef.current?.click()}
+                          data-testid="upload-document-button"
                         >
                           <IconUpload />
                           <span className={styles.plusPopupLabel}>Upload tài liệu</span>
@@ -325,6 +331,7 @@ export default function ChatInput({
                           className={styles.plusPopupBtn}
                           disabled={isKnowledgeLoading}
                           onClick={() => setIngestMode(true)}
+                          data-testid="ingest-text-button"
                         >
                           <IconText />
                           <span className={styles.plusPopupLabel}>Nhập text trực tiếp</span>
@@ -338,6 +345,7 @@ export default function ChatInput({
                           onChange={(e) => setIngestTitle(e.target.value)}
                           placeholder="Tiêu đề tài liệu"
                           disabled={isKnowledgeLoading}
+                          data-testid="ingest-title-input"
                         />
                         <textarea
                           className={styles.ingestTextarea}
@@ -346,6 +354,7 @@ export default function ChatInput({
                           onChange={(e) => setIngestText(e.target.value)}
                           placeholder="Dán nội dung tài liệu vào đây..."
                           disabled={isKnowledgeLoading}
+                          data-testid="ingest-textarea"
                         />
                         <div className={styles.ingestBtnRow}>
                           <button
@@ -360,6 +369,7 @@ export default function ChatInput({
                             className={styles.ingestSubmitBtn}
                             disabled={isKnowledgeLoading || !ingestTitle.trim() || !ingestText.trim()}
                             onClick={handleIngestSubmit}
+                            data-testid="ingest-submit-button"
                           >
                             {isKnowledgeLoading ? "Đang xử lý..." : "Import"}
                           </button>
@@ -369,11 +379,23 @@ export default function ChatInput({
                   </div>
                 )}
               </div>
+              <button
+                type="button"
+                className={`${styles.webSearchToggle} ${useWebSearch ? styles.webSearchToggleActive : ""}`}
+                onClick={() => setUseWebSearch((current) => !current)}
+                disabled={disabled}
+                title="Bật hoặc tắt AI web search bằng Tavily"
+                data-testid="web-search-toggle"
+              >
+                <span className={styles.webSearchToggleDot} />
+                <span>{useWebSearch ? "Web search đang bật" : "Web search"}</span>
+              </button>
               {feedback && <div className={styles.feedbackInline}>{feedback}</div>}
             </div>
           </div>
           <div className={styles.actions}>
-            <button className={styles.button} type="submit" disabled={disabled} title="Gửi">
+            <button className={styles.button} type="submit" disabled={disabled} title="Gửi" data-testid="chat-send-button">
+              <span className={styles.visuallyHidden}>Gửi</span>
               <IconSend />
             </button>
           </div>
@@ -386,6 +408,7 @@ export default function ChatInput({
         multiple
         style={{ display: "none" }}
         onChange={(e) => handleFiles(e.target.files)}
+        data-testid="image-file-input"
       />
       <input
         ref={knowledgeFileRef}
@@ -393,6 +416,7 @@ export default function ChatInput({
         accept=".txt,.md,.csv,.log,.json,.py,.js,.yaml,.yml,.pdf,.docx,.pptx,.xlsx,.xls"
         style={{ display: "none" }}
         onChange={handleKnowledgeUpload}
+        data-testid="knowledge-file-input"
       />
     </form>
   );

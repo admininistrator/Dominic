@@ -134,6 +134,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   type="button"
                   onClick={() => switchMode("login")}
                   disabled={isLoading}
+                  data-testid="forgot-back-button"
                 >
                   Quay lại đăng nhập
                 </button>
@@ -159,6 +160,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 type="button"
                 onClick={() => switchMode("login")}
                 disabled={isLoading}
+                data-testid="login-mode-button"
               >
                 Đăng nhập
               </button>
@@ -167,6 +169,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 type="button"
                 onClick={() => switchMode("register")}
                 disabled={isLoading}
+                data-testid="register-mode-button"
               >
                 Đăng ký
               </button>
@@ -193,6 +196,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 }}
                 placeholder="Nhập username"
                 disabled={isLoading}
+                data-testid="username-input"
               />
             </label>
 
@@ -212,6 +216,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   }}
                   placeholder="Dán reset token do admin cấp"
                   disabled={isLoading}
+                  data-testid="reset-token-input"
                 />
               </label>
             ) : null}
@@ -236,6 +241,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 }}
                 placeholder={isForgotMode ? "Nhập mật khẩu mới" : "Nhập password"}
                 disabled={isLoading}
+                data-testid="password-input"
               />
             </label>
 
@@ -260,6 +266,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   }}
                   placeholder={isForgotMode ? "Nhập lại mật khẩu mới" : "Nhập lại password"}
                   disabled={isLoading}
+                  data-testid="confirm-password-input"
                 />
               </label>
             ) : null}
@@ -271,6 +278,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   type="button"
                   onClick={() => switchMode("forgot")}
                   disabled={isLoading}
+                  data-testid="forgot-password-link"
                 >
                   Quên mật khẩu?
                 </button>
@@ -288,7 +296,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
             ) : null}
           </div>
 
-          <button className={styles.button} type="submit" disabled={isLoading}>
+          <button className={styles.button} type="submit" disabled={isLoading} data-testid="auth-submit-button">
             {isLoading
               ? isBootstrapping
                 ? "Đang khôi phục phiên..."

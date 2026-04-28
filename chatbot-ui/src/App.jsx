@@ -657,7 +657,7 @@ export default function App() {
     resetAuthState("");
   };
 
-  const handleSendMessage = async (text, images = []) => {
+  const handleSendMessage = async (text, images = [], options = {}) => {
     if (!authUser?.username || !activeSessionId) return;
 
     const targetSessionId = activeSessionId;
@@ -712,6 +712,7 @@ export default function App() {
         session_id: targetSessionId,
         message: text,
         knowledge_document_id: effectiveKnowledgeDocumentId,
+        use_web_search: Boolean(options.useWebSearch),
         images: images.length > 0 ? images : undefined,
       });
 

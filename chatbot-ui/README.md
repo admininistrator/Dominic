@@ -10,6 +10,7 @@ Frontend React + Vite cho dự án Dominic.
 - tự khôi phục phiên đăng nhập khi reload trang
 - gọi backend auth qua `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
 - gọi chat qua `/api/chat/*`
+- có thể bật Tavily web search theo từng câu hỏi ngay trong ô chat khi backend đã điền `TAVILY_API_KEY`
 
 ## Phase 2 hiện tại
 
@@ -46,7 +47,36 @@ VITE_API_TIMEOUT_MS=120000
 ```bash
 npm run lint
 npm run build
+npx playwright install chromium
+npm run test:e2e -- tests/e2e
 ```
+
+Playwright smoke hiện mock API trực tiếp ở browser layer, nên có thể kiểm tra các luồng quan trọng mà không cần backend thật:
+
+- helper facade giữ ở `tests/e2e/support/mockApi.js`, còn route handlers được tách theo domain trong `tests/e2e/support/mockApi/`
+
+- đăng nhập
+- đăng ký
+- quên mật khẩu
+- tìm hội thoại trong sidebar
+- tạo chat mới
+- chuyển session chat
+- đổi tên / xóa session chat
+- đổi tên session bằng blur
+- xóa session cuối và fallback về Chat 1
+- ingest text trực tiếp theo session
+- upload nhiều loại tài liệu (.md / .pdf / .docx)
+- upload tài liệu lỗi và feedback inline
+- ingest text lỗi và feedback inline
+- grounded chat
+- mở sources
+- xác nhận logout
+- knowledge search 0 kết quả
+- knowledge search lỗi backend
+- ưu tiên global document khi không có session document
+- knowledge reindex lỗi backend
+- knowledge delete lỗi backend
+- knowledge search / reindex / delete
 
 ## Ghi chú auth
 

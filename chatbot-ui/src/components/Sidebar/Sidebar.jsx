@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Sidebar.module.css";
 
-const SETTINGS_ANIMATION_MS = 220;
+const ACCOUNT_MENU_ANIMATION_MS = 240;
 
 // SVG Icons
 const IconChat = () => (
@@ -95,7 +95,8 @@ export default function Sidebar({
   onLogout, onChangePassword, theme = "light", onThemeChange, isPasswordBusy,
   totalTokenUsed, maxTokensPerDay = 10000,
 }) {
-  const [settingsPanelState, setSettingsPanelState] = useState("closed");
+  const [accountMenuState, setAccountMenuState] = useState("closed");
+  const [activeAccountTab, setActiveAccountTab] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState(null);
@@ -105,15 +106,16 @@ export default function Sidebar({
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState({ type: "info", text: "" });
-  const settingsPanelRef = useRef(null);
-  const settingsButtonRef = useRef(null);
-  const settingsCloseTimerRef = useRef(null);
-  const settingsOpenRafRef = useRef(null);
+  const accountMenuRef = useRef(null);
+  const accountButtonRef = useRef(null);
+  const accountCloseTimerRef = useRef(null);
+  const accountOpenRafRef = useRef(null);
 
   const username = user?.username || "";
   const role = user?.role || "user";
-  const settingsMounted = settingsPanelState !== "closed";
-  const settingsOpen = settingsPanelState === "open";
+  const accountMenuMounted = accountMenuState !== "closed";
+  const accountMenuOpen = accountMenuState === "open";
+  const isSettingsTabActive = activeAccountTab === "settings";
   const safeSessions = Array.isArray(sessions) ? sessions : [];
   const used = Number(totalTokenUsed || 0);
   const max = Number(maxTokensPerDay || 10000);
@@ -125,53 +127,62 @@ export default function Sidebar({
     : safeSessions;
   const grouped = groupSessionsByDate(filteredSessions);
 
-  const openSettingsPanel = useCallback(() => {
-    window.clearTimeout(settingsCloseTimerRef.current);
-    window.cancelAnimationFrame(settingsOpenRafRef.current);
-    setSettingsPanelState("opening");
+  const openAccountMenu = useCallback(() => {
+    window.clearTimeout(accountCloseTimerRef.current);
+    window.cancelAnimationFrame(accountOpenRafRef.current);
+    setAccountMenuState("opening");
   }, []);
 
-  const closeSettingsPanel = useCallback(() => {
-    if (settingsPanelState === "closed" || settingsPanelState === "closing") return;
-    window.clearTimeout(settingsCloseTimerRef.current);
-    window.cancelAnimationFrame(settingsOpenRafRef.current);
-    setSettingsPanelState("closing");
+  const closeAccountMenu = useCallback(() => {
+    if (accountMenuState === "closed" || accountMenuState === "closing") return;
+    window.clearTimeout(accountCloseTimerRef.current);
+    window.cancelAnimationFrame(accountOpenRafRef.current);
+    setAccountMenuState("closing");
     setPasswordSectionOpen(false);
-    settingsCloseTimerRef.current = window.setTimeout(() => {
-      setSettingsPanelState("closed");
-    }, SETTINGS_ANIMATION_MS);
-  }, [settingsPanelState]);
+    setActiveAccountTab(null);
+    accountCloseTimerRef.current = window.setTimeout(() => {
+      setAccountMenuState("closed");
+    }, ACCOUNT_MENU_ANIMATION_MS);
+  }, [accountMenuState]);
 
-  const toggleSettingsPanel = useCallback(() => {
-    if (settingsPanelState === "open" || settingsPanelState === "opening") {
-      closeSettingsPanel();
+  const toggleAccountMenu = useCallback(() => {
+    if (accountMenuState === "open" || accountMenuState === "opening") {
+      closeAccountMenu();
       return;
     }
-    openSettingsPanel();
-  }, [closeSettingsPanel, openSettingsPanel, settingsPanelState]);
+    openAccountMenu();
+  }, [accountMenuState, closeAccountMenu, openAccountMenu]);
+
+  const handleAccountTabToggle = useCallback((tabId) => {
+    setActiveAccountTab((current) => (current === tabId ? null : tabId));
+    if (tabId !== "settings") {
+      setPasswordSectionOpen(false);
+      setPasswordFeedback({ type: "info", text: "" });
+    }
+  }, []);
 
   useEffect(() => {
-    if (settingsPanelState !== "opening") return undefined;
-    settingsOpenRafRef.current = window.requestAnimationFrame(() => {
-      setSettingsPanelState("open");
+    if (accountMenuState !== "opening") return undefined;
+    accountOpenRafRef.current = window.requestAnimationFrame(() => {
+      setAccountMenuState("open");
     });
-    return () => window.cancelAnimationFrame(settingsOpenRafRef.current);
-  }, [settingsPanelState]);
+    return () => window.cancelAnimationFrame(accountOpenRafRef.current);
+  }, [accountMenuState]);
 
   useEffect(() => {
-    if (!settingsMounted) return undefined;
+    if (!accountMenuMounted) return undefined;
 
     const handlePointerDown = (event) => {
       const target = event.target;
-      if (settingsPanelRef.current?.contains(target) || settingsButtonRef.current?.contains(target)) {
+      if (accountMenuRef.current?.contains(target) || accountButtonRef.current?.contains(target)) {
         return;
       }
-      closeSettingsPanel();
+      closeAccountMenu();
     };
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        closeSettingsPanel();
+        closeAccountMenu();
       }
     };
 
@@ -181,14 +192,19 @@ export default function Sidebar({
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [closeSettingsPanel, settingsMounted]);
+  }, [accountMenuMounted, closeAccountMenu]);
 
   useEffect(() => {
     return () => {
-      window.clearTimeout(settingsCloseTimerRef.current);
-      window.cancelAnimationFrame(settingsOpenRafRef.current);
+      window.clearTimeout(accountCloseTimerRef.current);
+      window.cancelAnimationFrame(accountOpenRafRef.current);
     };
   }, []);
+
+  const handleLogoutClick = () => {
+    closeAccountMenu();
+    onLogout?.();
+  };
 
   const handleChangePasswordSubmit = async (e) => {
     e.preventDefault();
@@ -365,95 +381,119 @@ export default function Sidebar({
 
       {/* ── Bottom actions ── */}
       <div className={styles.bottomStack}>
-        <div className={styles.settingsCard}>
-        <button
-          ref={settingsButtonRef}
-          className={`${styles.settingsBtn} ${settingsMounted ? styles.settingsBtnActive : ""}`}
-          onClick={toggleSettingsPanel}
-          type="button"
-          aria-expanded={settingsMounted}
-          aria-controls="sidebar-settings-panel"
-        >
-          <IconSettings /> Settings
-        </button>
-        </div>
-        <div className={styles.userCard}>
-          <div className={styles.userRow}>
-          <div className={styles.avatar}>{username.charAt(0).toUpperCase()}</div>
-          <span className={styles.usernameText}>{username}</span>
-          <button className={styles.logoutIconBtn} onClick={onLogout} title="Đăng xuất" type="button">
-            <IconLogout />
-          </button>
-        </div>
-        </div>
-      </div>
-
-      {/* ── Settings panel (slide-up overlay) ── */}
-      {settingsMounted && (
-        <div
-          id="sidebar-settings-panel"
-          ref={settingsPanelRef}
-          className={`${styles.settingsPanel} ${settingsOpen ? styles.settingsPanelOpen : styles.settingsPanelClosing}`}
-        >
-          <div className={styles.settingsPanelHeader}>
-            <span>Settings</span>
-          </div>
-          <div className={styles.settingsSection}>
-            <p className={styles.settingsSectionTitle}>Appearance</p>
-            <div className={styles.themeToggle}>
-              <button
-                className={`${styles.themeOption} ${theme === "light" ? styles.themeOptionActive : ""}`}
-                type="button"
-                onClick={() => handleThemeChange("light")}
-              >
-                <span className={styles.themeOptionIcon}><IconSun /></span>
-                <span className={styles.themeOptionCopy}>
-                  <span className={styles.themeOptionTitle}>Light Mode</span>
-                </span>
-              </button>
-              <button
-                className={`${styles.themeOption} ${theme === "dark" ? styles.themeOptionActive : ""}`}
-                type="button"
-                onClick={() => handleThemeChange("dark")}
-              >
-                <span className={styles.themeOptionIcon}><IconMoon /></span>
-                <span className={styles.themeOptionCopy}>
-                  <span className={styles.themeOptionTitle}>Dark Mode</span>
-                </span>
-              </button>
-            </div>
-          </div>
-          <div className={styles.settingsSection}>
-            <p className={styles.settingsSectionTitle}>Security</p>
-            <button
-              className={`${styles.settingsActionBtn} ${passwordSectionOpen ? styles.settingsActionBtnOpen : ""}`}
-              type="button"
-              onClick={() => setPasswordSectionOpen((value) => !value)}
-              aria-expanded={passwordSectionOpen}
-            >
-              <span className={styles.settingsActionLabel}>Đổi mật khẩu</span>
-              <span className={`${styles.settingsActionChevron} ${passwordSectionOpen ? styles.settingsActionChevronOpen : ""}`}>
+        <div className={styles.userCardWrap}>
+          <button
+            ref={accountButtonRef}
+            className={styles.userCardButton}
+            onClick={toggleAccountMenu}
+            type="button"
+            aria-expanded={accountMenuMounted}
+            aria-controls="sidebar-account-menu"
+          >
+            <div className={`${styles.userCard} ${accountMenuMounted ? styles.userCardActive : ""}`}>
+              <div className={styles.userRow}>
+                <div className={styles.avatar}>{username.charAt(0).toUpperCase()}</div>
+                <div className={styles.userIdentity}>
+                  <span className={styles.usernameText}>{username}</span>
+                  <span className={styles.userRoleText}>{role === "admin" ? "Administrator" : "Account"}</span>
+                </div>
+              </div>
+              <span className={`${styles.accountChevron} ${accountMenuMounted ? styles.accountChevronOpen : ""}`}>
                 <IconChevron />
               </span>
-            </button>
-            {passwordSectionOpen && (
-              <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
-                <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
-                <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
-                  {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
-                </button>
-              </form>
-            )}
-            {passwordFeedback.text && (
-              <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
-                {passwordFeedback.text}
+            </div>
+          </button>
+
+          {accountMenuMounted && (
+            <div
+              id="sidebar-account-menu"
+              ref={accountMenuRef}
+              className={`${styles.accountMenu} ${accountMenuOpen ? styles.accountMenuOpen : styles.accountMenuClosing}`}
+            >
+              <div className={styles.accountMenuHeader}>
+                <span className={styles.accountMenuEyebrow}>Account</span>
+                <span className={styles.accountMenuTitle}>{username}</span>
               </div>
-            )}
-          </div>
+
+              <div className={styles.accountTabRow}>
+                <button
+                  className={`${styles.accountTabBtn} ${isSettingsTabActive ? styles.accountTabBtnActive : ""}`}
+                  type="button"
+                  onClick={() => handleAccountTabToggle("settings")}
+                >
+                  <IconSettings />
+                  <span>Settings</span>
+                </button>
+              </div>
+
+              <div className={`${styles.accountTabPane} ${isSettingsTabActive ? styles.accountTabPaneActive : ""}`}>
+                <div className={styles.accountTabPaneInner}>
+                  <div className={styles.settingsSection}>
+                    <p className={styles.settingsSectionTitle}>Appearance</p>
+                    <div className={styles.themeToggle}>
+                      <button
+                        className={`${styles.themeOption} ${theme === "light" ? styles.themeOptionActive : ""}`}
+                        type="button"
+                        onClick={() => handleThemeChange("light")}
+                      >
+                        <span className={styles.themeOptionIcon}><IconSun /></span>
+                        <span className={styles.themeOptionCopy}>
+                          <span className={styles.themeOptionTitle}>Light Mode</span>
+                        </span>
+                      </button>
+                      <button
+                        className={`${styles.themeOption} ${theme === "dark" ? styles.themeOptionActive : ""}`}
+                        type="button"
+                        onClick={() => handleThemeChange("dark")}
+                      >
+                        <span className={styles.themeOptionIcon}><IconMoon /></span>
+                        <span className={styles.themeOptionCopy}>
+                          <span className={styles.themeOptionTitle}>Dark Mode</span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.settingsSection}>
+                    <p className={styles.settingsSectionTitle}>Security</p>
+                    <button
+                      className={`${styles.settingsActionBtn} ${passwordSectionOpen ? styles.settingsActionBtnOpen : ""}`}
+                      type="button"
+                      onClick={() => setPasswordSectionOpen((value) => !value)}
+                      aria-expanded={passwordSectionOpen}
+                    >
+                      <span className={styles.settingsActionLabel}>Đổi mật khẩu</span>
+                      <span className={`${styles.settingsActionChevron} ${passwordSectionOpen ? styles.settingsActionChevronOpen : ""}`}>
+                        <IconChevron />
+                      </span>
+                    </button>
+                    {passwordSectionOpen && (
+                      <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
+                        <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
+                        <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                        <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                        <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
+                          {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
+                        </button>
+                      </form>
+                    )}
+                    {passwordFeedback.text && (
+                      <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
+                        {passwordFeedback.text}
+                      </div>
+                    )}
+                  </div>
+
+                  <button className={styles.accountLogoutBtn} onClick={handleLogoutClick} title="Đăng xuất" type="button">
+                    <IconLogout />
+                    <span>Log out</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </aside>
   );
 }

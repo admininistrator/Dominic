@@ -1,6 +1,50 @@
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import MessageBubble from "../MessageBubble/MessageBubble";
 import styles from "./ChatWindow.module.css";
+
+const THINKING_STEPS = [
+  "Dominic đang đọc ngữ cảnh và nối lại mạch hội thoại.",
+  "Đang đối chiếu tài liệu liên quan trước khi trả lời.",
+  "Đang biên soạn câu trả lời rõ ràng và sát ngữ cảnh hơn.",
+];
+
+function ThinkingBubble() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setStepIndex((current) => (current + 1) % THINKING_STEPS.length);
+    }, 1600);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className={styles.thinkingRow} aria-live="polite" aria-label="Dominic đang suy nghĩ">
+      <div className={styles.thinkingAvatar}>D</div>
+      <div className={styles.thinkingCard}>
+        <div className={styles.thinkingHeader}>
+          <span className={styles.thinkingLabel}>Dominic</span>
+          <span className={styles.thinkingStatus}>đang suy nghĩ</span>
+        </div>
+
+        <div className={styles.thinkingOrbit}>
+          <span className={styles.thinkingDot} />
+          <span className={styles.thinkingDot} />
+          <span className={styles.thinkingDot} />
+        </div>
+
+        <p className={styles.thinkingMessage}>{THINKING_STEPS[stepIndex]}</p>
+
+        <div className={styles.thinkingSkeleton}>
+          <span className={`${styles.thinkingLine} ${styles.thinkingLineWide}`} />
+          <span className={`${styles.thinkingLine} ${styles.thinkingLineMid}`} />
+          <span className={`${styles.thinkingLine} ${styles.thinkingLineShort}`} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }) {
   const containerRef = useRef(null);
@@ -61,12 +105,10 @@ export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }
                 images={msg.images}
                 documents={msg.documents}
                 sources={msg.sources}
-                retrieval={msg.retrieval}
-                usage={msg.usage}
                 animate={msg.animate}
               />
             ))}
-            {isLoading && <div className={styles.loading}>Dominic đang trả lời...</div>}
+            {isLoading && <ThinkingBubble />}
             <div ref={bottomRef} />
           </div>
         )}

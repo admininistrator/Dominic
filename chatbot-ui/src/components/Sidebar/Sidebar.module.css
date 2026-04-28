@@ -392,46 +392,48 @@
   flex-direction: column;
   gap: 10px;
   flex-shrink: 0;
+  position: relative;
 }
 
-.settingsCard,
+.userCardWrap {
+  position: relative;
+}
+
+.userCardButton {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .userCard {
   background: #ffffff;
   border-radius: 22px;
-  padding: 8px;
+  padding: 10px 12px;
   box-shadow: 0 10px 24px rgba(148, 163, 184, 0.14);
   border: 1px solid #f1f5f9;
-}
-
-.settingsBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 16px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: #374151;
-  text-align: left;
-  width: 100%;
-  transition: background 0.12s;
-  cursor: pointer;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
-.settingsBtn:hover { background: #f8fafc; }
 
-.settingsBtnActive {
-  background: #eef2ff;
-  color: #4338ca;
+.userCardActive {
+  border-color: #c7d2fe;
+  background: linear-gradient(180deg, rgba(238, 242, 255, 0.96), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 16px 30px rgba(129, 140, 248, 0.18);
 }
 
 .userRow {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 12px;
+  padding: 0;
   border-radius: 16px;
+  min-width: 0;
+  flex: 1;
 }
 
 .avatar {
@@ -449,39 +451,61 @@
 }
 
 .usernameText {
-  flex: 1;
   font-size: 13.5px;
-  font-weight: 500;
+  font-weight: 700;
   color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.logoutIconBtn {
-  border: none;
-  background: transparent;
-  border-radius: 999px;
-  color: #9ca3af;
-  padding: 6px;
+.userIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 2px;
+}
+
+.userRoleText {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.accountChevron {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
-  cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  justify-content: center;
+  color: #64748b;
+  background: #f8fafc;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
-.logoutIconBtn:hover { color: #ef4444; background: #fef2f2; }
 
-/* ── Settings panel ── */
-.settingsPanel {
+.accountChevronOpen {
+  transform: rotate(180deg);
+  color: #4338ca;
+  background: #eef2ff;
+}
+
+.accountMenu {
   position: absolute;
-  inset: auto 14px 14px 14px;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 10px);
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid #e5e7eb;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
   border-radius: 28px;
   padding: 18px;
   z-index: 10;
-  max-height: 75vh;
+  max-height: min(72vh, 640px);
   overflow-y: auto;
   scrollbar-width: none;
   transform-origin: bottom center;
@@ -490,30 +514,121 @@
   transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-.settingsPanel::-webkit-scrollbar {
+.accountMenu::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-.settingsPanelOpen {
+.accountMenuOpen {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
 
-.settingsPanelClosing {
+.accountMenuClosing {
   opacity: 0;
   transform: translateY(16px) scale(0.97);
   pointer-events: none;
 }
 
-.settingsPanelHeader {
+.accountMenuHeader {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-bottom: 16px;
-  font-size: 15px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.accountMenuEyebrow {
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.accountMenuTitle {
+  font-size: 16px;
+  font-weight: 800;
   color: #111827;
+}
+
+.accountTabRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.accountTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.82);
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.accountTabBtn:hover {
+  transform: translateY(-1px);
+  border-color: #c7d2fe;
+  background: #f8faff;
+}
+
+.accountTabBtnActive {
+  border-color: #818cf8;
+  background: linear-gradient(180deg, rgba(224, 231, 255, 0.92), rgba(238, 242, 255, 0.96));
+  color: #4338ca;
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.12);
+}
+
+.accountTabPane {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  clip-path: inset(46% 0 46% 0 round 22px);
+  transform: translateY(-8px);
+  transition: grid-template-rows 0.24s ease, opacity 0.2s ease, clip-path 0.24s ease, transform 0.24s ease;
+}
+
+.accountTabPaneActive {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  clip-path: inset(0 0 0 0 round 22px);
+  transform: translateY(0);
+}
+
+.accountTabPaneInner {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  gap: 14px;
+}
+
+.accountLogoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid #fecaca;
+  background: linear-gradient(180deg, #fff1f2, #fff7f7);
+  color: #dc2626;
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.accountLogoutBtn:hover {
+  transform: translateY(-1px);
+  border-color: #fda4af;
+  background: linear-gradient(180deg, #ffe4e6, #fff1f2);
 }
 
 .settingsSection {
@@ -737,9 +852,8 @@
 }
 
 :global([data-theme="dark"]) .sessionPanel,
-:global([data-theme="dark"]) .settingsCard,
 :global([data-theme="dark"]) .userCard,
-:global([data-theme="dark"]) .settingsPanel,
+:global([data-theme="dark"]) .accountMenu,
 :global([data-theme="dark"]) .settingsSection {
   background: rgba(10, 18, 33, 0.9);
   border-color: rgba(71, 85, 105, 0.4);
@@ -749,7 +863,9 @@
 :global([data-theme="dark"]) .conversationsLabel,
 :global([data-theme="dark"]) .groupLabel,
 :global([data-theme="dark"]) .quotaText,
-:global([data-theme="dark"]) .settingsSectionTitle {
+:global([data-theme="dark"]) .settingsSectionTitle,
+:global([data-theme="dark"]) .userRoleText,
+:global([data-theme="dark"]) .accountMenuEyebrow {
   color: #94a3b8;
 }
 
@@ -769,7 +885,7 @@
 
 :global([data-theme="dark"]) .sessionBtn,
 :global([data-theme="dark"]) .usernameText,
-:global([data-theme="dark"]) .settingsPanelHeader,
+:global([data-theme="dark"]) .accountMenuTitle,
 :global([data-theme="dark"]) .settingsStat,
 :global([data-theme="dark"]) .themeOptionTitle,
 :global([data-theme="dark"]) .settingsActionLabel {
@@ -777,31 +893,39 @@
 }
 
 :global([data-theme="dark"]) .sessionBtn svg,
-:global([data-theme="dark"]) .logoutIconBtn,
-:global([data-theme="dark"]) .settingsBtn {
+:global([data-theme="dark"]) .accountChevron,
+:global([data-theme="dark"]) .accountTabBtn,
+:global([data-theme="dark"]) .accountLogoutBtn {
   color: #cbd5e1;
 }
 
 :global([data-theme="dark"]) .sessionActionBtn,
-:global([data-theme="dark"]) .settingsBtn:hover,
-:global([data-theme="dark"]) .logoutIconBtn:hover,
 :global([data-theme="dark"]) .themeOption,
-:global([data-theme="dark"]) .settingsActionBtn {
+:global([data-theme="dark"]) .settingsActionBtn,
+:global([data-theme="dark"]) .accountTabBtn {
   background: rgba(15, 23, 42, 0.72);
 }
 
-:global([data-theme="dark"]) .settingsBtnActive,
+:global([data-theme="dark"]) .userCardActive,
 :global([data-theme="dark"]) .themeOptionActive,
-:global([data-theme="dark"]) .settingsActionBtnOpen {
+:global([data-theme="dark"]) .settingsActionBtnOpen,
+:global([data-theme="dark"]) .accountTabBtnActive {
   background: linear-gradient(180deg, rgba(49, 46, 129, 0.42), rgba(30, 41, 59, 0.9));
   border-color: rgba(129, 140, 248, 0.55);
   color: #e5e7ff;
 }
 
 :global([data-theme="dark"]) .themeOptionIcon,
-:global([data-theme="dark"]) .settingsActionChevron {
+:global([data-theme="dark"]) .settingsActionChevron,
+:global([data-theme="dark"]) .accountChevron {
   background: rgba(79, 70, 229, 0.16);
   color: #c7d2fe;
+}
+
+:global([data-theme="dark"]) .accountLogoutBtn {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: linear-gradient(180deg, rgba(69, 10, 10, 0.5), rgba(31, 41, 55, 0.88));
+  color: #fca5a5;
 }
 
 :global([data-theme="dark"]) .quotaTrack {

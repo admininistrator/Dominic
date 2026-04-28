@@ -3,19 +3,6 @@ import ReactMarkdown from "react-markdown";
 import { TYPEWRITER_INTERVAL_MS } from "../../config/uiConfig";
 import styles from "./MessageBubble.module.css";
 
-function getPolicyLabel(policy) {
-  switch (policy) {
-    case "grounded":
-      return "Grounded";
-    case "cautious_general":
-      return "Cautious";
-    case "insufficient_evidence":
-      return "Insufficient evidence";
-    default:
-      return policy || "Unknown";
-  }
-}
-
 const IconThumbUp = () => (
   <svg
     width="15"
@@ -96,9 +83,7 @@ const IconEdit = () => (
 export default function MessageBubble({
   role,
   content,
-  usage,
   sources = [],
-  retrieval = null,
   animate = false,
   images = [],
   documents = [],
@@ -240,23 +225,6 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* Guardrail badge */}
-        {!isUser && retrieval?.answer_policy && (
-          <div className={styles.guardrailRow}>
-            <span
-              className={`${styles.guardrailBadge} ${
-                retrieval.answer_policy === "grounded"
-                  ? styles.groundedBadge
-                  : retrieval.answer_policy === "cautious_general"
-                  ? styles.cautiousBadge
-                  : styles.insufficientBadge
-              }`}
-            >
-              {getPolicyLabel(retrieval.answer_policy)}
-            </span>
-          </div>
-        )}
-
         {/* Action bar (assistant only) */}
         {!isUser && (
           <div className={styles.actionBar}>
@@ -286,23 +254,6 @@ export default function MessageBubble({
               )}
             </div>
             <button className={styles.regenerateBtn}>↺ Regenerate</button>
-          </div>
-        )}
-
-        {/* Usage token */}
-        {usage && !isUser && (
-          <div className={styles.usage}>
-            in: {usage.input_tokens} · out: {usage.output_tokens}
-          </div>
-        )}
-
-        {/* Retrieval meta */}
-        {!isUser && retrieval && (
-          <div className={styles.retrievalMeta}>
-            {retrieval.strategy || "default"} · top {retrieval.top_k} ·{" "}
-            {retrieval.returned} returned
-            {retrieval.latency_ms ? ` · ${retrieval.latency_ms}ms` : ""}
-            {retrieval.evidence_strength ? ` · ${retrieval.evidence_strength}` : ""}
           </div>
         )}
 

@@ -102,6 +102,7 @@ export default function Sidebar({
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [passwordSectionOpen, setPasswordSectionOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -139,6 +140,7 @@ export default function Sidebar({
     window.cancelAnimationFrame(accountOpenRafRef.current);
     setAccountMenuState("closing");
     setPasswordSectionOpen(false);
+    setLogoutConfirmOpen(false);
     setActiveAccountTab(null);
     accountCloseTimerRef.current = window.setTimeout(() => {
       setAccountMenuState("closed");
@@ -155,6 +157,7 @@ export default function Sidebar({
 
   const handleAccountTabToggle = useCallback((tabId) => {
     setActiveAccountTab((current) => (current === tabId ? null : tabId));
+    setLogoutConfirmOpen(false);
     if (tabId !== "settings") {
       setPasswordSectionOpen(false);
       setPasswordFeedback({ type: "info", text: "" });
@@ -202,8 +205,17 @@ export default function Sidebar({
   }, []);
 
   const handleLogoutClick = () => {
+    setLogoutConfirmOpen((current) => !current);
+  };
+
+  const handleLogoutConfirm = () => {
+    setLogoutConfirmOpen(false);
     closeAccountMenu();
     onLogout?.();
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutConfirmOpen(false);
   };
 
   const handleChangePasswordSubmit = async (e) => {
@@ -459,7 +471,10 @@ export default function Sidebar({
                     <button
                       className={`${styles.settingsActionBtn} ${passwordSectionOpen ? styles.settingsActionBtnOpen : ""}`}
                       type="button"
-                      onClick={() => setPasswordSectionOpen((value) => !value)}
+                      onClick={() => {
+                        setPasswordSectionOpen((value) => !value);
+                        setLogoutConfirmOpen(false);
+                      }}
                       aria-expanded={passwordSectionOpen}
                     >
                       <span className={styles.settingsActionLabel}>Đổi mật khẩu</span>
@@ -467,27 +482,50 @@ export default function Sidebar({
                         <IconChevron />
                       </span>
                     </button>
-                    {passwordSectionOpen && (
-                      <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
-                        <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
-                        <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                        <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                        <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
-                          {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
-                        </button>
-                      </form>
-                    )}
-                    {passwordFeedback.text && (
-                      <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
-                        {passwordFeedback.text}
+                    <div className={`${styles.passwordSectionPanel} ${passwordSectionOpen ? styles.passwordSectionPanelOpen : ""}`}>
+                      <div className={styles.passwordSectionInner}>
+                        <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
+                          <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
+                          <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                          <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                          <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
+                            {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
+                          </button>
+                        </form>
+                        {passwordFeedback.text && (
+                          <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
+                            {passwordFeedback.text}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  <button className={styles.accountLogoutBtn} onClick={handleLogoutClick} title="Đăng xuất" type="button">
-                    <IconLogout />
-                    <span>Log out</span>
-                  </button>
+                  <div className={styles.logoutActionWrap}>
+                    <button
+                      className={`${styles.accountLogoutBtn} ${logoutConfirmOpen ? styles.accountLogoutBtnOpen : ""}`}
+                      onClick={handleLogoutClick}
+                      title="Đăng xuất"
+                      type="button"
+                      aria-expanded={logoutConfirmOpen}
+                    >
+                      <IconLogout />
+                      <span>Log out</span>
+                    </button>
+                    <div className={`${styles.logoutConfirmPanel} ${logoutConfirmOpen ? styles.logoutConfirmPanelOpen : ""}`}>
+                      <div className={styles.logoutConfirmInner}>
+                        <p className={styles.logoutConfirmText}>Bạn có muốn đăng xuất khỏi tài khoản này không?</p>
+                        <div className={styles.logoutConfirmActions}>
+                          <button className={styles.logoutCancelBtn} onClick={handleLogoutCancel} type="button">
+                            Ở lại
+                          </button>
+                          <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button">
+                            Xác nhận đăng xuất
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -858,12 +858,10 @@
 
 .logoutConfirmActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
 
-.logoutCancelBtn,
 .logoutConfirmBtn {
   min-height: 42px;
   border-radius: 16px;
@@ -873,24 +871,13 @@
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.logoutCancelBtn {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  color: #475569;
-}
-
 .logoutConfirmBtn {
   background: linear-gradient(180deg, #ef4444, #dc2626);
   color: #ffffff;
 }
 
-.logoutCancelBtn:hover,
 .logoutConfirmBtn:hover {
   transform: translateY(-1px);
-}
-
-.logoutCancelBtn:hover {
-  border-color: #cbd5e1;
 }
 
 .logoutConfirmBtn:hover {
@@ -996,8 +983,7 @@
 :global([data-theme="dark"]) .sessionActionBtn,
 :global([data-theme="dark"]) .themeOption,
 :global([data-theme="dark"]) .settingsActionBtn,
-:global([data-theme="dark"]) .accountTabBtn,
-:global([data-theme="dark"]) .logoutCancelBtn {
+:global([data-theme="dark"]) .accountTabBtn {
   background: rgba(15, 23, 42, 0.72);
 }
 
@@ -1039,11 +1025,6 @@
 
 :global([data-theme="dark"]) .logoutConfirmText {
   color: #fecaca;
-}
-
-:global([data-theme="dark"]) .logoutCancelBtn {
-  border-color: rgba(71, 85, 105, 0.55);
-  color: #cbd5e1;
 }
 
 :global([data-theme="dark"]) .logoutConfirmBtn {

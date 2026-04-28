@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import styles from "./ChatInput.module.css";
 
 const MAX_IMAGES = 5;
 const MAX_SIZE_MB = 5;
+const MAX_TEXTAREA_HEIGHT = 220;
 
 const IconImage = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -78,11 +79,21 @@ export default function ChatInput({
   const fileInputRef = useRef(null);
   const knowledgeFileRef = useRef(null);
   const plusMenuRef = useRef(null);
+  const textareaRef = useRef(null);
   const closePanelTimerRef = useRef(null);
   const openPanelRafRef = useRef(null);
 
   const importPanelMounted = importPanelState !== "closed";
   const importPanelOpen = importPanelState === "open";
+
+  const resizeTextarea = useCallback((textarea) => {
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+  }, []);
 
   const openImportPanel = useCallback(() => {
     window.clearTimeout(closePanelTimerRef.current);
@@ -137,6 +148,10 @@ export default function ChatInput({
     };
   }, []);
 
+  useLayoutEffect(() => {
+    resizeTextarea(textareaRef.current);
+  }, [resizeTextarea, text]);
+
   const submit = () => {
     const value = text.trim();
     if ((!value && images.length === 0) || disabled) return;
@@ -155,6 +170,11 @@ export default function ChatInput({
       e.preventDefault();
       submit();
     }
+  };
+
+  const handleTextChange = (e) => {
+    resizeTextarea(e.target);
+    setText(e.target.value);
   };
 
   const handleFiles = async (files) => {
@@ -249,10 +269,11 @@ export default function ChatInput({
         <div className={styles.inputRow}>
           <div className={styles.inputContent}>
             <textarea
+              ref={textareaRef}
               className={styles.textarea}
               rows={1}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={handleTextChange}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               placeholder="Nhắn Dominic..."

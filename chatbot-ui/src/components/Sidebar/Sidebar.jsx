@@ -214,10 +214,6 @@ export default function Sidebar({
     onLogout?.();
   };
 
-  const handleLogoutCancel = () => {
-    setLogoutConfirmOpen(false);
-  };
-
   const handleChangePasswordSubmit = async (e) => {
     e.preventDefault();
     if (!oldPassword || !newPassword || !confirmNewPassword) {
@@ -516,9 +512,6 @@ export default function Sidebar({
                       <div className={styles.logoutConfirmInner}>
                         <p className={styles.logoutConfirmText}>Bạn có muốn đăng xuất khỏi tài khoản này không?</p>
                         <div className={styles.logoutConfirmActions}>
-                          <button className={styles.logoutCancelBtn} onClick={handleLogoutCancel} type="button">
-                            Ở lại
-                          </button>
                           <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button">
                             Xác nhận đăng xuất
                           </button>

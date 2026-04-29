@@ -1,9 +1,25 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+	getChatModelDescription,
+	getChatModelLabel,
+	getGroupedChatModelOptions,
+  getDefaultThinkingEffortForModel,
+  getThinkingEffortLabel,
+  getThinkingEffortOptionsForModel,
+  supportsThinkingEffort,
+} from "../../config/uiConfig";
 import styles from "./ChatInput.module.css";
 
 const MAX_IMAGES = 5;
 const MAX_SIZE_MB = 5;
 const MAX_TEXTAREA_HEIGHT = 220;
+const POPUP_OPEN_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] };
+const POPUP_EXIT_TRANSITION = { duration: 0.36, ease: [0.22, 1, 0.36, 1] };
+const POPUP_MOTION_VARIANTS = {
+  hidden: { opacity: 0, scale: 0, transition: POPUP_EXIT_TRANSITION },
+  visible: { opacity: 1, scale: 1, transition: POPUP_OPEN_TRANSITION },
+};
 
 const IconImage = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,6 +68,20 @@ const IconDoc = () => (
   </svg>
 );
 
+const IconOrbit = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="2.4" />
+    <path d="M4 12c0-2.5 3.6-4.5 8-4.5s8 2 8 4.5-3.6 4.5-8 4.5-8-2-8-4.5Z" />
+    <path d="M7.7 7.7c1.8-1.8 5.8-.8 8.9 2.3 3.1 3.1 4.1 7.1 2.3 8.9-1.8 1.8-5.8.8-8.9-2.3-3.1-3.1-4.1-7.1-2.3-8.9Z" />
+  </svg>
+);
+
+const IconChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -68,6 +98,11 @@ export default function ChatInput({
   onIngestKnowledgeText,
   isKnowledgeLoading,
   sessionDocuments = [],
+  selectedModel,
+  availableModels = [],
+  onModelChange,
+  thinkingEffortByModel = {},
+  onThinkingEffortChange,
 }) {
   const [text, setText] = useState("");
   const [images, setImages] = useState([]); // [{dataUri, name, type}]
@@ -80,12 +115,23 @@ export default function ChatInput({
   const fileInputRef = useRef(null);
   const knowledgeFileRef = useRef(null);
   const plusMenuRef = useRef(null);
+  const modelMenuRef = useRef(null);
+  const thinkingMenuRef = useRef(null);
   const textareaRef = useRef(null);
   const closePanelTimerRef = useRef(null);
   const openPanelRafRef = useRef(null);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [thinkingMenuOpen, setThinkingMenuOpen] = useState(false);
 
   const importPanelMounted = importPanelState !== "closed";
   const importPanelOpen = importPanelState === "open";
+  const activeModel = selectedModel || availableModels[0] || "";
+  const activeModelLabel = getChatModelLabel(activeModel);
+  const groupedModelOptions = getGroupedChatModelOptions(availableModels);
+  const thinkingEffortSupported = supportsThinkingEffort(activeModel);
+  const thinkingEffortOptions = getThinkingEffortOptionsForModel(activeModel);
+  const activeThinkingEffort = thinkingEffortByModel[activeModel] || getDefaultThinkingEffortForModel(activeModel);
+  const activeThinkingEffortLabel = getThinkingEffortLabel(activeModel, activeThinkingEffort);
 
   const resizeTextarea = useCallback((textarea) => {
     if (!textarea) return;
@@ -99,6 +145,8 @@ export default function ChatInput({
   const openImportPanel = useCallback(() => {
     window.clearTimeout(closePanelTimerRef.current);
     window.cancelAnimationFrame(openPanelRafRef.current);
+    setModelMenuOpen(false);
+    setThinkingMenuOpen(false);
     setImportPanelState("opening");
     setFeedback("");
   }, []);
@@ -122,6 +170,45 @@ export default function ChatInput({
     openImportPanel();
   };
 
+  const openModelMenu = useCallback(() => {
+    closeImportPanel();
+    setThinkingMenuOpen(false);
+    setModelMenuOpen(true);
+  }, [closeImportPanel]);
+
+  const closeModelMenu = useCallback(() => {
+    setModelMenuOpen(false);
+  }, []);
+
+  const openThinkingMenu = useCallback(() => {
+    if (!thinkingEffortSupported) return;
+    closeImportPanel();
+    setModelMenuOpen(false);
+    setThinkingMenuOpen(true);
+  }, [closeImportPanel, thinkingEffortSupported]);
+
+  const closeThinkingMenu = useCallback(() => {
+    setThinkingMenuOpen(false);
+  }, []);
+
+  const toggleModelMenu = () => {
+    if (disabled || availableModels.length === 0) return;
+    if (modelMenuOpen) {
+      closeModelMenu();
+      return;
+    }
+    openModelMenu();
+  };
+
+  const toggleThinkingMenu = () => {
+    if (disabled || !thinkingEffortSupported) return;
+    if (thinkingMenuOpen) {
+      closeThinkingMenu();
+      return;
+    }
+    openThinkingMenu();
+  };
+
   useEffect(() => {
     if (importPanelState !== "opening") return undefined;
     openPanelRafRef.current = window.requestAnimationFrame(() => {
@@ -143,6 +230,46 @@ export default function ChatInput({
   }, [closeImportPanel, importPanelMounted]);
 
   useEffect(() => {
+    if (!modelMenuOpen) return undefined;
+    const handleOutside = (e) => {
+      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target)) {
+        closeModelMenu();
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        closeModelMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [closeModelMenu, modelMenuOpen]);
+
+  useEffect(() => {
+    if (!thinkingMenuOpen) return undefined;
+    const handleOutside = (e) => {
+      if (thinkingMenuRef.current && !thinkingMenuRef.current.contains(e.target)) {
+        closeThinkingMenu();
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        closeThinkingMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [closeThinkingMenu, thinkingMenuOpen]);
+
+  useEffect(() => {
     return () => {
       window.clearTimeout(closePanelTimerRef.current);
       window.cancelAnimationFrame(openPanelRafRef.current);
@@ -158,6 +285,8 @@ export default function ChatInput({
     if ((!value && images.length === 0) || disabled) return;
     onSendMessage(value, images.map((i) => ({ dataUri: i.dataUri, type: i.type })), {
       useWebSearch,
+      model: selectedModel,
+      reasoningEffort: thinkingEffortSupported ? activeThinkingEffort : undefined,
     });
     setText("");
     setImages([]);
@@ -236,6 +365,17 @@ export default function ChatInput({
       closeImportPanel();
       setTimeout(() => setFeedback(""), 3000);
     }
+  };
+
+  const handleModelSelect = (modelName) => {
+    onModelChange?.(modelName);
+    closeModelMenu();
+  };
+
+  const handleThinkingEffortSelect = (effortValue) => {
+    if (!activeModel || !thinkingEffortSupported) return;
+    onThinkingEffortChange?.(activeModel, effortValue);
+    closeThinkingMenu();
   };
 
   return (
@@ -388,8 +528,161 @@ export default function ChatInput({
                 data-testid="web-search-toggle"
               >
                 <span className={styles.webSearchToggleDot} />
-                <span>{useWebSearch ? "Web search đang bật" : "Web search"}</span>
+                <span className={styles.webSearchToggleLabelRow}>
+                  <span className={styles.webSearchToggleLabelBase}>Web search</span>
+                  <span className={styles.webSearchToggleSuffixWrap} aria-hidden={!useWebSearch}>
+                    <span className={styles.webSearchToggleSuffix}> đang bật</span>
+                  </span>
+                </span>
               </button>
+              <div className={styles.modelArea} ref={modelMenuRef}>
+                <motion.button
+                  type="button"
+                  className={`${styles.modelPicker} ${modelMenuOpen ? styles.modelPickerOpen : ""}`}
+                  title={`Model hiện tại: ${activeModelLabel || ""}`}
+                  onClick={toggleModelMenu}
+                  disabled={disabled || availableModels.length === 0}
+                  data-testid="chat-model-select"
+                  aria-label="Chọn model AI"
+                  aria-expanded={modelMenuOpen}
+                  whileTap={{ y: 1 }}
+                >
+                  <span className={styles.modelPickerBadge}>
+                    <IconOrbit />
+                  </span>
+                  <span className={styles.modelPickerMeta}>
+                    <span className={styles.modelPickerLabel}>Model AI</span>
+                    <span className={styles.modelPickerValue}>{activeModelLabel || "Chọn model"}</span>
+                  </span>
+                  <span className={`${styles.modelPickerChevron} ${modelMenuOpen ? styles.modelPickerChevronOpen : ""}`}>
+                    <IconChevronDown />
+                  </span>
+                </motion.button>
+
+                <AnimatePresence initial={false}>
+                  {modelMenuOpen ? (
+                    <div className={styles.modelPopupShell} data-testid="chat-model-menu">
+                      <motion.div
+                        key="chat-model-menu"
+                        className={styles.modelPopup}
+                        variants={POPUP_MOTION_VARIANTS}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                      >
+                        <div className={styles.modelPopupHeader}>
+                          <span className={styles.modelPopupTitle}>Chọn model</span>
+                        </div>
+                        <div className={styles.modelOptionList}>
+                          {groupedModelOptions.map(({ group, models }) => (
+                            <section key={group} className={styles.modelGroup} aria-label={group}>
+                              <div className={styles.modelGroupHeader}>{group}</div>
+                              <div className={styles.modelGroupList}>
+                                {models.map((modelOption) => {
+                                  const modelName = modelOption.id;
+                                  const modelLabel = getChatModelLabel(modelName);
+                                  const modelDescription = getChatModelDescription(modelName);
+                                  const isActive = modelName === selectedModel;
+                                  const thinkingEffort = thinkingEffortByModel[modelName];
+                                  const thinkingEffortEnabled = supportsThinkingEffort(modelName);
+                                  const thinkingEffortLabel = getThinkingEffortLabel(modelName, thinkingEffort);
+                                  return (
+                                    <button
+                                      key={modelName}
+                                      type="button"
+                                      className={`${styles.modelOption} ${isActive ? styles.modelOptionActive : ""}`}
+                                      onClick={() => handleModelSelect(modelName)}
+                                      data-testid={`chat-model-option-${modelName}`}
+                                    >
+                                      <span className={styles.modelOptionText}>
+                                        <span className={styles.modelOptionTopRow}>
+                                          <span className={styles.modelOptionTitle}>{modelLabel}</span>
+                                          <span className={styles.modelOptionBadges}>
+                                            {thinkingEffortEnabled && thinkingEffortLabel && (
+                                              <span className={styles.modelOptionEffortBadge}>{thinkingEffortLabel}</span>
+                                            )}
+                                            {isActive && <span className={styles.modelOptionBadge}>Đang dùng</span>}
+                                          </span>
+                                        </span>
+                                        {modelDescription && <span className={styles.modelOptionDescription}>{modelDescription}</span>}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+              {thinkingEffortSupported && (
+                <div className={styles.thinkingArea} ref={thinkingMenuRef}>
+                  <motion.button
+                    type="button"
+                    className={`${styles.thinkingPicker} ${thinkingMenuOpen ? styles.thinkingPickerOpen : ""}`}
+                    onClick={toggleThinkingMenu}
+                    disabled={disabled}
+                    title={`Thinking effort hiện tại: ${activeThinkingEffortLabel}`}
+                    data-testid="chat-thinking-effort-select"
+                    aria-label="Chọn thinking effort"
+                    aria-expanded={thinkingMenuOpen}
+                    whileTap={{ y: 1 }}
+                  >
+                    <span className={styles.thinkingPickerMeta}>
+                      <span className={styles.thinkingPickerLabel}>Thinking</span>
+                      <span className={styles.thinkingPickerValue}>{activeThinkingEffortLabel}</span>
+                    </span>
+                    <span className={`${styles.thinkingPickerChevron} ${thinkingMenuOpen ? styles.thinkingPickerChevronOpen : ""}`}>
+                      <IconChevronDown />
+                    </span>
+                  </motion.button>
+
+                  <AnimatePresence initial={false}>
+                    {thinkingMenuOpen ? (
+                      <div className={styles.thinkingPopupShell} data-testid="chat-thinking-effort-menu">
+                        <motion.div
+                          key="chat-thinking-effort-menu"
+                          className={styles.thinkingPopup}
+                          variants={POPUP_MOTION_VARIANTS}
+                          initial="hidden"
+                          animate="visible"
+                          exit="hidden"
+                        >
+                          <div className={styles.thinkingPopupHeader}>
+                            <span className={styles.thinkingPopupTitle}>Thinking effort</span>
+                            <span className={styles.thinkingPopupModel}>{activeModelLabel}</span>
+                          </div>
+                          <div className={styles.thinkingOptionList}>
+                            {thinkingEffortOptions.map((option) => {
+                              const isSelected = option.value === activeThinkingEffort;
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  className={`${styles.thinkingOption} ${isSelected ? styles.thinkingOptionActive : ""}`}
+                                  onClick={() => handleThinkingEffortSelect(option.value)}
+                                  data-testid={`chat-thinking-effort-${option.value}`}
+                                  disabled={option.disabled}
+                                >
+                                  <span className={styles.thinkingOptionTitle}>{option.label}</span>
+                                  {option.disabled ? (
+                                    <span className={styles.thinkingOptionDisabledBadge}>Chưa hỗ trợ</span>
+                                  ) : (
+                                    isSelected && <span className={styles.thinkingOptionBadge}>Đang dùng</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      </div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
+              )}
               {feedback && <div className={styles.feedbackInline}>{feedback}</div>}
             </div>
           </div>

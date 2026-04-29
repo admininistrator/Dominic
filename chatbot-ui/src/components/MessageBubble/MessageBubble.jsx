@@ -87,6 +87,7 @@ export default function MessageBubble({
   animate = false,
   images = [],
   documents = [],
+  assistantMeta = null,
 }) {
   const isUser = role === "user";
   const shouldAnimate = !isUser && animate;
@@ -188,6 +189,9 @@ export default function MessageBubble({
             </button>
           )}
         </div>
+        {!isUser && assistantMeta?.display_text && (
+          <div className={styles.assistantMetaLabel}>{assistantMeta.display_text}</div>
+        )}
 
         {/* Content */}
         {isUser ? (

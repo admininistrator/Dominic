@@ -1,17 +1,29 @@
 import { useState } from "react";
 import styles from "./Login.module.css";
 
+const EyeIcon = ({ visible }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z" />
+    <circle cx="12" cy="12" r="3" />
+    {visible ? null : <path d="M4 4l16 16" />}
+  </svg>
+);
+
 export default function Login({ onLogin, onRegister, onResetPassword, isLoading, isBootstrapping, error }) {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetToken, setResetToken] = useState("");
   const [serverMessage, setServerMessage] = useState("");
   const [clientError, setClientError] = useState("");
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setClientError("");
     setServerMessage("");
   };
@@ -223,40 +235,16 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
 
             <label className={styles.field} htmlFor="password">
               <span className={styles.label}>{isForgotMode ? "Mật khẩu mới" : "Password"}</span>
-              <input
-                id="password"
-                name="password"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                type="password"
-                className={styles.input}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (clientError) {
-                    setClientError("");
-                  }
-                  if (serverMessage) {
-                    setServerMessage("");
-                  }
-                }}
-                placeholder={isForgotMode ? "Nhập mật khẩu mới" : "Nhập password"}
-                disabled={isLoading}
-                data-testid="password-input"
-              />
-            </label>
-
-            {isRegisterMode || isForgotMode ? (
-              <label className={styles.field} htmlFor="confirmPassword">
-                <span className={styles.label}>{isForgotMode ? "Xác nhận mật khẩu mới" : "Confirm password"}</span>
+              <div className={styles.inputWrap}>
                 <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  autoComplete="new-password"
-                  type="password"
-                  className={styles.input}
-                  value={confirmPassword}
+                  id="password"
+                  name="password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  type={showPassword ? "text" : "password"}
+                  className={`${styles.input} ${styles.inputWithAdornment}`}
+                  value={password}
                   onChange={(e) => {
-                    setConfirmPassword(e.target.value);
+                    setPassword(e.target.value);
                     if (clientError) {
                       setClientError("");
                     }
@@ -264,10 +252,58 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                       setServerMessage("");
                     }
                   }}
-                  placeholder={isForgotMode ? "Nhập lại mật khẩu mới" : "Nhập lại password"}
+                  placeholder={isForgotMode ? "Nhập mật khẩu mới" : "Nhập password"}
                   disabled={isLoading}
-                  data-testid="confirm-password-input"
+                  data-testid="password-input"
                 />
+                <button
+                  className={styles.passwordToggle}
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  aria-pressed={showPassword}
+                  disabled={isLoading}
+                >
+                  <EyeIcon visible={showPassword} />
+                </button>
+              </div>
+            </label>
+
+            {isRegisterMode || isForgotMode ? (
+              <label className={styles.field} htmlFor="confirmPassword">
+                <span className={styles.label}>{isForgotMode ? "Xác nhận mật khẩu mới" : "Confirm password"}</span>
+                <div className={styles.inputWrap}>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    autoComplete="new-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    className={`${styles.input} ${styles.inputWithAdornment}`}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (clientError) {
+                        setClientError("");
+                      }
+                      if (serverMessage) {
+                        setServerMessage("");
+                      }
+                    }}
+                    placeholder={isForgotMode ? "Nhập lại mật khẩu mới" : "Nhập lại password"}
+                    disabled={isLoading}
+                    data-testid="confirm-password-input"
+                  />
+                  <button
+                    className={styles.passwordToggle}
+                    type="button"
+                    onClick={() => setShowConfirmPassword((value) => !value)}
+                    aria-label={showConfirmPassword ? "Ẩn xác nhận mật khẩu" : "Hiện xác nhận mật khẩu"}
+                    aria-pressed={showConfirmPassword}
+                    disabled={isLoading}
+                  >
+                    <EyeIcon visible={showConfirmPassword} />
+                  </button>
+                </div>
               </label>
             ) : null}
 

@@ -105,6 +105,7 @@ export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }
                 images={msg.images}
                 documents={msg.documents}
                 sources={msg.sources}
+                assistantMeta={msg.assistantMeta}
                 animate={msg.animate}
               />
             ))}

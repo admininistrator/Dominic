@@ -6,6 +6,8 @@ export async function sendChatMessage({
   message,
   knowledge_document_id,
   use_web_search,
+  model,
+  reasoning_effort,
   images,          // [{dataUri, type}] – optional
   image_media_types, // [string] – optional
 }) {
@@ -13,6 +15,8 @@ export async function sendChatMessage({
   if (username) payload.username = username;
   if (knowledge_document_id) payload.knowledge_document_id = knowledge_document_id;
   if (use_web_search) payload.use_web_search = true;
+  if (model) payload.model = model;
+  if (reasoning_effort) payload.reasoning_effort = reasoning_effort;
 
   // Attach vision images when present
   if (images && images.length > 0) {

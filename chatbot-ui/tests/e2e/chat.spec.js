@@ -158,6 +158,85 @@ test.describe("Dominic chat smoke", () => {
     await expect(page.getByText("Chat 3")).toBeVisible();
   });
 
+  test("sends the selected 9router model with web search enabled", async ({ page }) => {
+    const state = createApiState();
+    await installApiMocks(page, state);
+
+    await loginViaUi(page);
+
+    await page.getByTestId("chat-model-select").click();
+    await expect(page.getByTestId("chat-model-menu")).toBeVisible();
+    await page.getByTestId("chat-model-option-claude-sonnet-4.6").click();
+    await page.getByTestId("web-search-toggle").click();
+    await page.getByTestId("chat-textarea").fill("Tin moi nhat ve PostgreSQL la gi?");
+    await page.getByTestId("chat-send-button").click();
+
+    await expect(page.getByText("Theo Tavily, tôi đang trả lời bằng claude-sonnet-4.6.")).toBeVisible();
+    expect(state.lastChatRequest).toMatchObject({
+      model: "claude-sonnet-4.6",
+      use_web_search: true,
+    });
+  });
+
+  test("stores and sends thinking effort for the selected GPT model", async ({ page }) => {
+    const state = createApiState();
+    await installApiMocks(page, state);
+
+    await loginViaUi(page);
+
+    await page.getByTestId("chat-model-select").click();
+    await expect(page.getByTestId("chat-model-menu")).toBeVisible();
+    await page.getByTestId("chat-model-option-gpt-5.4-mini").click();
+    await page.getByTestId("chat-thinking-effort-select").click();
+    await expect(page.getByTestId("chat-thinking-effort-menu")).toBeVisible();
+    await expect(page.getByTestId("chat-thinking-effort-xhigh")).toBeDisabled();
+    await page.getByTestId("chat-thinking-effort-high").click();
+    await page.getByTestId("chat-textarea").fill("Kiem tra thinking effort theo model");
+    await page.getByTestId("chat-send-button").click();
+    await expect(page.getByText("gpt-5.4-mini high")).toBeVisible();
+
+    expect(state.lastChatRequest).toMatchObject({
+      model: "gpt-5.4-mini",
+      reasoning_effort: "high",
+    });
+  });
+
+  test("shows limited thinking effort options for Claude Sonnet and hides them for Claude Haiku and Gemini", async ({ page }) => {
+    const state = createApiState();
+    await installApiMocks(page, state);
+
+    await loginViaUi(page);
+
+    await page.getByTestId("chat-model-select").click();
+    await page.getByTestId("chat-model-option-claude-sonnet-4.6").click();
+    await expect(page.getByTestId("chat-thinking-effort-select")).toBeVisible();
+    await page.getByTestId("chat-thinking-effort-select").click();
+    await expect(page.getByTestId("chat-thinking-effort-low")).toBeVisible();
+    await expect(page.getByTestId("chat-thinking-effort-medium")).toBeVisible();
+    await expect(page.getByTestId("chat-thinking-effort-high")).toBeVisible();
+    await expect(page.getByTestId("chat-thinking-effort-xhigh")).toHaveCount(0);
+    await page.mouse.click(10, 10);
+
+    await page.getByTestId("chat-model-select").click();
+    await page.getByTestId("chat-model-option-claude-haiku-4.5").click();
+    await expect(page.getByTestId("chat-thinking-effort-select")).toHaveCount(0);
+
+    await page.getByTestId("chat-model-select").click();
+    await page.getByTestId("chat-model-option-gemini-3.1-pro-preview").click();
+    await expect(page.getByTestId("chat-thinking-effort-select")).toHaveCount(0);
+  });
+
+  test("expands web search label when toggled on", async ({ page }) => {
+    const state = createApiState();
+    await installApiMocks(page, state);
+
+    await loginViaUi(page);
+
+    await expect(page.getByTestId("web-search-toggle")).toContainText("Web search");
+    await page.getByTestId("web-search-toggle").click();
+    await expect(page.getByTestId("web-search-toggle")).toContainText("Web search đang bật");
+  });
+
   test("renames a session when the input loses focus", async ({ page }) => {
     const activeSession = createSessionRecord({ id: 101, title: "Refund policy workspace" });
     const secondSession = createSessionRecord({ id: 102, title: "Escalation queue" });

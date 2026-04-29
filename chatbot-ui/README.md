@@ -42,6 +42,25 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 VITE_API_TIMEOUT_MS=120000
 ```
 
+## Docker / AWS deployment
+
+### Đã làm được
+
+- frontend đã có `Dockerfile` multi-stage để build bằng Node và serve bằng Nginx
+- có `nginx.conf` để hỗ trợ SPA fallback và health endpoint `/healthz`
+- backend repo đã có `deploy/docker-compose.ec2.yml` để build frontend này cùng backend trên EC2
+
+### Chưa tự làm thay frontend được
+
+- frontend image chỉ build static assets; reverse proxy TLS/domain vẫn nên đặt ở Nginx host trên EC2
+- `VITE_API_BASE_URL` vẫn là giá trị build-time, đổi xong phải rebuild image frontend
+
+### Cần làm tiếp khi deploy AWS
+
+- đọc guide `DominicBE/DEPLOY_AWS_EC2_DOCKER.md`
+- bảo đảm frontend repo được clone thành sibling của backend repo trên EC2
+- truyền `FRONTEND_VITE_API_BASE_URL=https://api.dominicapp.dev` qua file `.env.ec2` ở backend repo trước khi chạy compose
+
 ## Kiểm tra chất lượng
 
 ```bash

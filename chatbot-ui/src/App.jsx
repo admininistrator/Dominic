@@ -39,12 +39,22 @@ import {
   uploadKnowledgeFile,
 } from "./service/knowledgeApi";
 import { clearAuthToken, getStoredAuthToken, setAuthToken } from "./service/apiClient";
+import {
+  DEFAULT_CHAT_MODEL,
+  SUPPORTED_CHAT_MODELS,
+  getChatModelDisplayText,
+  getDefaultThinkingEffortForModel,
+  normalizeThinkingEffortForModel,
+  supportsThinkingEffort,
+} from "./config/uiConfig";
 import "./styles/globals.css";
 
 const VIEW_CHAT = "chat";
 const VIEW_KNOWLEDGE = "knowledge";
 const VIEW_ADMIN = "admin";
 const THEME_STORAGE_KEY = "dominic-ui-theme";
+const CHAT_MODEL_STORAGE_KEY = "dominic-chat-model";
+const CHAT_MODEL_EFFORT_STORAGE_KEY = "dominic-chat-model-effort";
 
 const EMPTY_USAGE = {
   username: "",
@@ -110,6 +120,38 @@ function getInitialTheme() {
   return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
 }
 
+function getInitialChatModel() {
+  if (typeof window === "undefined") return DEFAULT_CHAT_MODEL;
+
+  const storedModel = window.localStorage.getItem(CHAT_MODEL_STORAGE_KEY);
+  if (storedModel && SUPPORTED_CHAT_MODELS.includes(storedModel)) {
+    return storedModel;
+  }
+
+  return DEFAULT_CHAT_MODEL;
+}
+
+function getInitialThinkingEffortByModel() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const raw = window.localStorage.getItem(CHAT_MODEL_EFFORT_STORAGE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([modelName]) => SUPPORTED_CHAT_MODELS.includes(modelName))
+        .map(([modelName, effort]) => [modelName, normalizeThinkingEffortForModel(modelName, effort)])
+        .filter(([, effort]) => Boolean(effort))
+    );
+  } catch {
+    return {};
+  }
+}
+
 function normalizeMessageImages(images) {
   return Array.isArray(images)
     ? images
@@ -138,6 +180,23 @@ function normalizeMessageDocuments(documents) {
     : [];
 }
 
+function normalizeAssistantMeta(meta) {
+  if (!meta || typeof meta !== "object") return null;
+
+  const model = typeof meta.model === "string" ? meta.model.trim() : "";
+  const reasoningEffort = typeof meta.reasoning_effort === "string" ? meta.reasoning_effort.trim().toLowerCase() : "";
+  const displayText = typeof meta.display_text === "string" ? meta.display_text.trim() : "";
+  const normalizedDisplayText = getChatModelDisplayText(model, reasoningEffort, displayText || model);
+
+  if (!model && !normalizedDisplayText) return null;
+
+  return {
+    model: model || null,
+    reasoning_effort: reasoningEffort || null,
+    display_text: normalizedDisplayText || displayText || model,
+  };
+}
+
 function mapHistoryRowToUiMessage(row, images = [], documents = []) {
   const isAssistant = row.role === "assistant";
   return {
@@ -149,6 +208,7 @@ function mapHistoryRowToUiMessage(row, images = [], documents = []) {
     requestId: row.request_id,
     sources: isAssistant ? row.sources || [] : [],
     retrieval: isAssistant ? row.retrieval || null : null,
+    assistantMeta: isAssistant ? normalizeAssistantMeta(row.assistant_meta) : null,
     usage: isAssistant
       ? {
           input_tokens: Number(row.input_tokens || 0),
@@ -202,6 +262,18 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [usage, setUsage] = useState(EMPTY_USAGE);
   const [theme, setTheme] = useState(getInitialTheme);
+  const [selectedChatModel, setSelectedChatModel] = useState(getInitialChatModel);
+  const [thinkingEffortByModel, setThinkingEffortByModel] = useState(getInitialThinkingEffortByModel);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(CHAT_MODEL_STORAGE_KEY, selectedChatModel);
+  }, [selectedChatModel]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(CHAT_MODEL_EFFORT_STORAGE_KEY, JSON.stringify(thinkingEffortByModel));
+  }, [thinkingEffortByModel]);
 
   const resetAuthState = useCallback((nextError = "") => {
     imageCacheRef.current.clear();
@@ -657,6 +729,17 @@ export default function App() {
     resetAuthState("");
   };
 
+  const handleThinkingEffortChange = useCallback((modelName, effort) => {
+    if (!SUPPORTED_CHAT_MODELS.includes(modelName)) return;
+    const normalized = normalizeThinkingEffortForModel(modelName, effort);
+    if (!normalized) return;
+
+    setThinkingEffortByModel((current) => ({
+      ...current,
+      [modelName]: normalized,
+    }));
+  }, []);
+
   const handleSendMessage = async (text, images = [], options = {}) => {
     if (!authUser?.username || !activeSessionId) return;
 
@@ -708,11 +791,22 @@ export default function App() {
     setIsChatLoading(true);
 
     try {
+      const effectiveModel = options.model || selectedChatModel;
+      const requestedThinkingEffort = normalizeThinkingEffortForModel(
+        effectiveModel,
+        options.reasoningEffort || thinkingEffortByModel[effectiveModel]
+      );
+      const reasoningEffort = supportsThinkingEffort(effectiveModel)
+        ? requestedThinkingEffort || getDefaultThinkingEffortForModel(effectiveModel)
+        : undefined;
+
       const data = await sendChatMessage({
         session_id: targetSessionId,
         message: text,
         knowledge_document_id: effectiveKnowledgeDocumentId,
         use_web_search: Boolean(options.useWebSearch),
+        model: effectiveModel,
+        reasoning_effort: reasoningEffort,
         images: images.length > 0 ? images : undefined,
       });
 
@@ -1102,6 +1196,11 @@ export default function App() {
           onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
           isKnowledgeLoading={isKnowledgeLoading}
           sessionDocuments={currentSessionDocuments}
+          selectedModel={selectedChatModel}
+          availableModels={SUPPORTED_CHAT_MODELS}
+          onModelChange={setSelectedChatModel}
+          thinkingEffortByModel={thinkingEffortByModel}
+          onThinkingEffortChange={handleThinkingEffortChange}
         />
       </div>
     );

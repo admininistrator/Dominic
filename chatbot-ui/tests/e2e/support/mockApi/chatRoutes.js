@@ -13,7 +13,17 @@ function touchSession(state, sessionId) {
   session.updated_at = isoNow();
 }
 
-function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocumentId = null) {
+function buildAssistantMeta(model = null, reasoningEffort = null) {
+  const effectiveModel = model || "default model";
+  const effectiveEffort = typeof reasoningEffort === "string" && reasoningEffort.trim() ? reasoningEffort.trim().toLowerCase() : null;
+  return {
+    model: effectiveModel,
+    reasoning_effort: effectiveEffort,
+    display_text: effectiveEffort ? `${effectiveModel} ${effectiveEffort}` : effectiveModel,
+  };
+}
+
+function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocumentId = null, useWebSearch = false, model = null, reasoningEffort = null) {
   const explicitDocument = knowledgeDocumentId
     ? state.documents.find((document) => document.id === knowledgeDocumentId) || null
     : null;
@@ -28,23 +38,40 @@ function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocument
         score: 0.93,
         snippet: "Yêu cầu hoàn tiền được xem xét trong vòng 5 ngày làm việc.",
       }
-    : null;
+    : useWebSearch
+      ? {
+          document_id: null,
+          chunk_id: null,
+          rank: 1,
+          title: "Tavily web result",
+          source_type: "web",
+          score: 0.88,
+          snippet: `Web grounded reply via ${model || "default model"}.`,
+          url: "https://example.com/web-search-result",
+          domain: "example.com",
+        }
+      : null;
 
   return {
-    reply: "Theo Smoke Knowledge Base, yêu cầu hoàn tiền được xem xét trong vòng 5 ngày làm việc.",
+    reply: source?.source_type === "web"
+      ? `Theo Tavily, tôi đang trả lời bằng ${model || "default model"}.`
+      : "Theo Smoke Knowledge Base, yêu cầu hoàn tiền được xem xét trong vòng 5 ngày làm việc.",
+    assistant_meta: buildAssistantMeta(model, reasoningEffort),
     sources: source ? [source] : [],
     retrieval: {
-      used: true,
+      used: Boolean(effectiveDocument),
       returned: source ? 1 : 0,
       document_id: effectiveDocument?.id ?? null,
-      strategy: "hybrid_rerank",
+      strategy: source?.source_type === "web" ? "web_search" : "hybrid_rerank",
       fallback_used: false,
       rewritten_query: message,
       query_expansions: ["refund policy"],
-      evidence_strength: "grounded",
-      answer_policy: "grounded",
-      packed_count: source ? 1 : 0,
+      evidence_strength: source?.source_type === "web" ? "web" : "grounded",
+      answer_policy: source?.source_type === "web" ? "web_grounded" : "grounded",
+      packed_count: effectiveDocument ? 1 : 0,
       packed_token_estimate: source ? 120 : 0,
+      web_search_used: Boolean(useWebSearch),
+      web_results_count: source?.source_type === "web" ? 1 : 0,
     },
     usage: {
       input_tokens: 120,
@@ -108,11 +135,15 @@ export async function handleChatRoute({ route, request, path, method, state }) {
     const payload = request.postDataJSON();
     const sessionId = Number(payload.session_id);
     const requestId = `req-${state.nextRequestId++}`;
+    state.lastChatRequest = payload;
     const response = buildDefaultAssistantReply(
       state,
       sessionId,
       payload.message,
       payload.knowledge_document_id ?? null,
+      Boolean(payload.use_web_search),
+      payload.model ?? null,
+      payload.reasoning_effort ?? null,
     );
 
     ensureSessionStore(state, sessionId);
@@ -133,6 +164,7 @@ export async function handleChatRoute({ route, request, path, method, state }) {
         created_at: isoNow(),
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,
+        assistant_meta: response.assistant_meta,
         sources: response.sources,
         retrieval: response.retrieval,
       },
@@ -142,6 +174,7 @@ export async function handleChatRoute({ route, request, path, method, state }) {
     await fulfillJson(route, {
       reply: response.reply,
       request_id: requestId,
+      assistant_meta: response.assistant_meta,
       sources: response.sources,
       retrieval: response.retrieval,
       usage: response.usage,

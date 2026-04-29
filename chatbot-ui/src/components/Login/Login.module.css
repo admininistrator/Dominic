@@ -282,6 +282,10 @@
   gap: 8px;
 }
 
+.inputWrap {
+  position: relative;
+}
+
 .inlineActionRow {
   display: flex;
   justify-content: flex-end;
@@ -321,6 +325,38 @@
   font-size: 14px;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s, transform 0.15s;
   width: 100%;
+}
+
+.inputWithAdornment {
+  padding-right: 52px;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.passwordToggle:hover:not(:disabled) {
+  background: rgba(226, 232, 240, 0.75);
+  color: #334155;
+}
+
+.passwordToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .input:focus {
@@ -453,6 +489,15 @@
 
 :global([data-theme="dark"]) .input {
   color: #f8fbff;
+}
+
+:global([data-theme="dark"]) .passwordToggle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .passwordToggle:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.92);
+  color: #d8e4f7;
 }
 
 :global([data-theme="dark"]) .input:focus {

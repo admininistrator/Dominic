@@ -408,7 +408,7 @@ export default function Sidebar({
                 <div className={styles.avatar}>{username.charAt(0).toUpperCase()}</div>
                 <div className={styles.userIdentity}>
                   <span className={styles.usernameText}>{username}</span>
-                  <span className={styles.userRoleText}>{role === "admin" ? "Administrator" : "Account"}</span>
+                  <span className={styles.userRoleText}>{role === "admin" ? "Administrator" : "USER"}</span>
                 </div>
               </div>
               <span className={`${styles.accountChevron} ${accountMenuMounted ? styles.accountChevronOpen : ""}`}>

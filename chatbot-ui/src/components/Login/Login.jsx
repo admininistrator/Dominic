@@ -95,6 +95,7 @@ const PANEL_ENTER_MOTION = {
 
 const AUTH_TITLE_TYPING_ENTER_MS = 20;
 const AUTH_TITLE_TYPING_DELETE_MS = 14;
+const PASSWORD_RULE_HINT = "8-16 ký tự";
 
 const TYPEWRITER_TRANSITION = {
   enterMs: AUTH_TITLE_TYPING_ENTER_MS,
@@ -304,6 +305,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
   const displayError = clientError || error;
   const isForgotMode = mode === "forgot";
   const isRegisterMode = mode === "register";
+  const isPasswordCreationMode = isRegisterMode || isForgotMode;
   const showcaseModeKey = isForgotMode ? "forgot" : "auth";
   const authSurfaceKey = isForgotMode ? "forgot" : "auth";
   const showcaseContent = SHOWCASE_CONTENT_BY_MODE[mode] || SHOWCASE_CONTENT_BY_MODE.login;
@@ -570,6 +572,8 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                       autoComplete={mode === "login" ? "current-password" : "new-password"}
                       type={showPassword ? "text" : "password"}
                       className={`${styles.input} ${styles.inputWithAdornment}`}
+                      minLength={isPasswordCreationMode ? 8 : undefined}
+                      maxLength={isPasswordCreationMode ? 16 : undefined}
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
@@ -580,7 +584,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                           setServerMessage("");
                         }
                       }}
-                      placeholder={isForgotMode ? "Nhập mật khẩu mới" : "Nhập password"}
+                      placeholder={isForgotMode ? `Mật khẩu mới (${PASSWORD_RULE_HINT})` : isRegisterMode ? `Mật khẩu (${PASSWORD_RULE_HINT})` : "Nhập password"}
                       disabled={isLoading}
                       data-testid="password-input"
                     />
@@ -622,6 +626,8 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                             autoComplete="new-password"
                             type={showConfirmPassword ? "text" : "password"}
                             className={`${styles.input} ${styles.inputWithAdornment}`}
+                            minLength={8}
+                            maxLength={16}
                             value={confirmPassword}
                             onChange={(e) => {
                               setConfirmPassword(e.target.value);
@@ -632,7 +638,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                                 setServerMessage("");
                               }
                             }}
-                            placeholder={isForgotMode ? "Nhập lại mật khẩu mới" : "Nhập lại password"}
+                            placeholder={isForgotMode ? "Nhập lại mật khẩu mới (8-16 ký tự)" : "Nhập lại mật khẩu (8-16 ký tự)"}
                             disabled={isLoading}
                             data-testid="confirm-password-input"
                           />

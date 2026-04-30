@@ -486,8 +486,8 @@ export default function Sidebar({
                           <div className={styles.passwordSectionInner}>
                             <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
                               <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
-                              <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                              <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                              <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới (8-16 ký tự)" autoComplete="new-password" minLength={8} maxLength={16} disabled={isPasswordBusy} />
+                              <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới (8-16 ký tự)" autoComplete="new-password" minLength={8} maxLength={16} disabled={isPasswordBusy} />
                               <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
                                 {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
                               </button>

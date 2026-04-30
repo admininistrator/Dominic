@@ -20,7 +20,7 @@ function getIconAsset(iconName) {
 	return ICONS_BY_NAME[normalizeIconKey(iconName)] || null;
 }
 
-export const DOMINIC_AVATAR_ICON = getIconAsset("dominic-avatar");
+export const DOMINIC_AVATAR_ICON = getIconAsset("dominic-logo");
 export const MODEL_PICKER_AVATAR_ICON = getIconAsset("model-picker-avatar");
 export const USER_AVATAR_ICON = getIconAsset("user-avatar");
 

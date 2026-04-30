@@ -56,6 +56,10 @@
   will-change: transform, height;
 }
 
+.shell > * {
+  min-width: 0;
+}
+
 .showcase {
   align-self: start;
   padding: 28px;
@@ -770,11 +774,16 @@
 @media (max-width: 960px) {
   .shell {
     grid-template-columns: 1fr;
-    padding: 14px;
+    gap: 16px;
+    padding: 16px;
   }
 
   .showcase {
     padding: 22px;
+  }
+
+  .card {
+    padding: 24px;
   }
 
   .heroTitle {
@@ -783,6 +792,114 @@
 
   .previewCard {
     width: 100%;
+  }
+}
+
+@media (max-width: 820px) {
+  .page {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .orbA {
+    width: 240px;
+    height: 240px;
+    top: -70px;
+    left: -50px;
+  }
+
+  .orbB {
+    width: 220px;
+    height: 220px;
+    right: -50px;
+    bottom: -30px;
+  }
+
+  .shell {
+    width: min(760px, 100%);
+    border-radius: 30px;
+  }
+
+  .showcase,
+  .card {
+    border-radius: 24px;
+  }
+
+  .showcase {
+    gap: 20px;
+    padding: 24px;
+  }
+
+  .brandRow {
+    gap: 14px;
+  }
+
+  .brandMark {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    font-size: 22px;
+  }
+
+  .heroTitle {
+    font-size: clamp(30px, 6vw, 46px);
+  }
+
+  .heroTitleAuthBox {
+    width: min(15ch, 100%);
+    max-width: 15ch;
+    min-height: calc(3 * 1.02em);
+  }
+
+  .heroText {
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .featureRow {
+    gap: 8px;
+  }
+
+  .featurePill {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 11.5px;
+  }
+
+  .previewCard {
+    max-width: 100%;
+    height: 232px;
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .previewTimeline {
+    grid-template-rows: 70px 88px;
+    height: 170px;
+  }
+
+  .previewBubble {
+    width: min(100%, 300px);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .previewBubbleUser {
+    width: min(78%, 236px);
+    height: 70px;
+  }
+
+  .previewBubbleAssistant {
+    height: 88px;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
   }
 }
 
@@ -802,11 +919,158 @@
     padding: 20px;
   }
 
+  .shell {
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .showcase {
+    gap: 16px;
+  }
+
+  .card {
+    gap: 14px;
+  }
+
+  .brandMark {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    font-size: 20px;
+  }
+
+  .eyebrow,
+  .formEyebrow {
+    margin-bottom: 6px;
+    font-size: 10px;
+  }
+
+  .heroTitle {
+    font-size: clamp(26px, 10vw, 38px);
+    line-height: 1.02;
+  }
+
+  .heroTitleAuthBox {
+    width: 100%;
+    max-width: 12ch;
+    min-height: calc(4 * 1.02em);
+  }
+
+  .heroText {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .featurePill {
+    min-height: 32px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .backButton,
+  .modeBtn,
+  .modeStatePill,
+  .button {
+    min-height: 46px;
+  }
+
+  .input {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  .inputWithAdornment {
+    padding-right: 50px;
+  }
+
+  .passwordToggle {
+    right: 8px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .previewCard {
+    height: auto;
+    min-height: 214px;
+    padding: 14px;
+  }
+
+  .previewHeader {
+    margin-bottom: 12px;
+  }
+
+  .previewTimeline {
+    grid-template-rows: auto auto;
+    height: auto;
+    min-height: 150px;
+    gap: 10px;
+  }
+
+  .previewBubble {
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    height: auto;
+    padding: 12px 14px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .previewBubbleUser {
+    width: min(86%, 240px);
+  }
+
+  .previewBubbleAssistant {
+    width: min(100%, 100%);
+  }
+
+  .hint {
+    font-size: 11.5px;
+  }
+
   .modeSwitch {
     grid-template-columns: 1fr;
   }
 
   .brandRow {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .page {
+    padding: 10px;
+  }
+
+  .shell,
+  .card,
+  .showcase {
+    border-radius: 22px;
+  }
+
+  .showcase,
+  .card {
+    padding: 18px;
+  }
+
+  .heroTitle {
+    font-size: clamp(24px, 9vw, 32px);
+  }
+
+  .heroTitleAuthBox {
+    max-width: 11ch;
+  }
+
+  .previewBubbleUser {
+    width: min(92%, 220px);
   }
 }

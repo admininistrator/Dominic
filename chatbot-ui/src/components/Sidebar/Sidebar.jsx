@@ -1,7 +1,19 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { USER_AVATAR_ICON } from "../../assets/icons";
 import styles from "./Sidebar.module.css";
 
 const ACCOUNT_MENU_ANIMATION_MS = 240;
+const AUTH_PANEL_TRANSITION = { duration: 0.24, ease: [0.22, 1, 0.36, 1] };
+const ACCOUNT_MENU_VARIANTS = {
+  closed: { opacity: 0, y: 12, scale: 0.96, filter: "blur(6px)" },
+  open: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+};
+const ACCOUNT_SECTION_VARIANTS = {
+  hidden: { opacity: 0, height: 0, y: -10, filter: "blur(4px)" },
+  visible: { opacity: 1, height: "auto", y: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, height: 0, y: -8, filter: "blur(4px)" },
+};
 
 // SVG Icons
 const IconChat = () => (
@@ -38,12 +50,6 @@ const IconAdmin = () => (
 const IconTrash = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-  </svg>
-);
-const IconPencil = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
   </svg>
 );
 const IconSun = () => (
@@ -91,7 +97,7 @@ function groupSessionsByDate(sessions) {
 export default function Sidebar({
   user, activeView, onChangeView,
   sessions, activeSessionId, onCreateSession, onSelectSession,
-  onDeleteSession, onRenameSession,
+  onDeleteSession,
   onLogout, onChangePassword, theme = "light", onThemeChange, isPasswordBusy,
   totalTokenUsed, maxTokensPerDay = 10000,
 }) {
@@ -99,8 +105,6 @@ export default function Sidebar({
   const [activeAccountTab, setActiveAccountTab] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [editingSessionId, setEditingSessionId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState("");
   const [passwordSectionOpen, setPasswordSectionOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
@@ -116,6 +120,7 @@ export default function Sidebar({
   const role = user?.role || "user";
   const accountMenuMounted = accountMenuState !== "closed";
   const accountMenuOpen = accountMenuState === "open";
+  const accountMenuExpanded = accountMenuState === "open" || accountMenuState === "opening";
   const isSettingsTabActive = activeAccountTab === "settings";
   const safeSessions = Array.isArray(sessions) ? sessions : [];
   const used = Number(totalTokenUsed || 0);
@@ -237,19 +242,6 @@ export default function Sidebar({
     onThemeChange?.(nextTheme);
   };
 
-  const startRename = (s, e) => {
-    e.stopPropagation();
-    setEditingSessionId(s.id);
-    setEditingTitle(s.title || "");
-  };
-
-  const commitRename = async (sessionId) => {
-    if (editingTitle.trim() && onRenameSession) {
-      await onRenameSession(sessionId, editingTitle.trim());
-    }
-    setEditingSessionId(null);
-  };
-
   return (
     <aside className={styles.sidebar}>
       {/* ── Header: Brand ── */}
@@ -319,44 +311,22 @@ export default function Sidebar({
                         key={s.id}
                         className={`${styles.sessionItem} ${s.id === activeSessionId ? styles.sessionItemActive : ""}`}
                       >
-                        {editingSessionId === s.id ? (
-                          <input
-                            className={styles.renameInput}
-                            value={editingTitle}
-                            autoFocus
-                            onChange={e => setEditingTitle(e.target.value)}
-                            onBlur={() => commitRename(s.id)}
-                            onKeyDown={e => {
-                              if (e.key === "Enter") commitRename(s.id);
-                              if (e.key === "Escape") setEditingSessionId(null);
-                            }}
-                            onClick={e => e.stopPropagation()}
-                            data-testid={`rename-session-input-${s.id}`}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            className={styles.sessionBtn}
-                            onClick={() => onSelectSession(s.id)}
-                            data-testid={`sidebar-session-${s.id}`}
-                          >
-                            <IconChat />
-                            <span className={styles.sessionTitle}>{s.title || `Session ${s.id}`}</span>
-                          </button>
-                        )}
-                        {s.id === activeSessionId && editingSessionId !== s.id && (
+                        <button
+                          type="button"
+                          className={styles.sessionBtn}
+                          onClick={() => onSelectSession(s.id)}
+                          data-testid={`sidebar-session-${s.id}`}
+                        >
+                          <IconChat />
+                          <span className={`${styles.sessionTitle} ${s.animateTitle ? styles.sessionTitleAnimated : ""}`}>{s.title || `Session ${s.id}`}</span>
+                        </button>
+                        <div className={styles.sessionTitleTooltip} role="tooltip">
+                          {s.title || `Session ${s.id}`}
+                        </div>
+                        {s.id === activeSessionId && (
                           <span className={styles.activeDot} />
                         )}
                         <div className={styles.sessionActions}>
-                          <button
-                            className={styles.sessionActionBtn}
-                            title="Đổi tên"
-                            onClick={(e) => startRename(s, e)}
-                            type="button"
-                            data-testid={`rename-session-button-${s.id}`}
-                          >
-                            <IconPencil />
-                          </button>
                           <button
                             className={`${styles.sessionActionBtn} ${styles.sessionDeleteBtn}`}
                             title="Xóa"
@@ -405,7 +375,9 @@ export default function Sidebar({
           >
             <div className={`${styles.userCard} ${accountMenuMounted ? styles.userCardActive : ""}`}>
               <div className={styles.userRow}>
-                <div className={styles.avatar}>{username.charAt(0).toUpperCase()}</div>
+                <div className={styles.avatar}>
+                  <img src={USER_AVATAR_ICON} alt="" className={styles.avatarImage} />
+                </div>
                 <div className={styles.userIdentity}>
                   <span className={styles.usernameText}>{username}</span>
                   <span className={styles.userRoleText}>{role === "admin" ? "Administrator" : "USER"}</span>
@@ -417,12 +389,18 @@ export default function Sidebar({
             </div>
           </button>
 
-          {accountMenuMounted && (
-            <div
-              id="sidebar-account-menu"
-              ref={accountMenuRef}
-              className={`${styles.accountMenu} ${accountMenuOpen ? styles.accountMenuOpen : styles.accountMenuClosing}`}
-            >
+          <AnimatePresence>
+            {accountMenuMounted && (
+              <motion.div
+                id="sidebar-account-menu"
+                ref={accountMenuRef}
+                className={styles.accountMenu}
+                variants={ACCOUNT_MENU_VARIANTS}
+                initial="closed"
+                animate={accountMenuExpanded ? "open" : "closed"}
+                exit="closed"
+                transition={AUTH_PANEL_TRANSITION}
+              >
               <div className={styles.accountMenuHeader}>
                 <span className={styles.accountMenuEyebrow}>Account</span>
                 <span className={styles.accountMenuTitle}>{username}</span>
@@ -440,8 +418,18 @@ export default function Sidebar({
                 </button>
               </div>
 
-              <div className={`${styles.accountTabPane} ${isSettingsTabActive ? styles.accountTabPaneActive : ""}`}>
-                <div className={styles.accountTabPaneInner}>
+              <AnimatePresence initial={false} mode="wait">
+                {isSettingsTabActive ? (
+                  <motion.div
+                    key="settings-pane"
+                    className={styles.accountTabPane}
+                    variants={ACCOUNT_SECTION_VARIANTS}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={AUTH_PANEL_TRANSITION}
+                  >
+                    <div className={styles.accountTabPaneInner}>
                   <div className={styles.settingsSection}>
                     <p className={styles.settingsSectionTitle}>Appearance</p>
                     <div className={styles.themeToggle}>
@@ -484,23 +472,35 @@ export default function Sidebar({
                         <IconChevron />
                       </span>
                     </button>
-                    <div className={`${styles.passwordSectionPanel} ${passwordSectionOpen ? styles.passwordSectionPanelOpen : ""}`}>
-                      <div className={styles.passwordSectionInner}>
-                        <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
-                          <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
-                          <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                          <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
-                          <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
-                            {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
-                          </button>
-                        </form>
-                        {passwordFeedback.text && (
-                          <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
-                            {passwordFeedback.text}
+                    <AnimatePresence initial={false}>
+                      {passwordSectionOpen ? (
+                        <motion.div
+                          key="password-panel"
+                          className={styles.passwordSectionPanel}
+                          variants={ACCOUNT_SECTION_VARIANTS}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          transition={AUTH_PANEL_TRANSITION}
+                        >
+                          <div className={styles.passwordSectionInner}>
+                            <form className={styles.passwordForm} onSubmit={handleChangePasswordSubmit}>
+                              <input className={styles.settingsInput} type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Mật khẩu hiện tại" autoComplete="current-password" disabled={isPasswordBusy} />
+                              <input className={styles.settingsInput} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                              <input className={styles.settingsInput} type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Xác nhận mật khẩu mới" autoComplete="new-password" disabled={isPasswordBusy} />
+                              <button className={styles.settingsSaveBtn} type="submit" disabled={isPasswordBusy}>
+                                {isPasswordBusy ? "Đang đổi..." : "Lưu mật khẩu mới"}
+                              </button>
+                            </form>
+                            {passwordFeedback.text && (
+                              <div className={`${styles.feedback} ${passwordFeedback.type === "error" ? styles.feedbackError : styles.feedbackSuccess}`}>
+                                {passwordFeedback.text}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </div>
 
                   <div className={styles.logoutActionWrap}>
@@ -515,21 +515,36 @@ export default function Sidebar({
                       <IconLogout />
                       <span>Log out</span>
                     </button>
-                    <div className={`${styles.logoutConfirmPanel} ${logoutConfirmOpen ? styles.logoutConfirmPanelOpen : ""}`}>
-                      <div className={styles.logoutConfirmInner} data-testid="logout-confirm-panel">
-                        <p className={styles.logoutConfirmText}>Bạn có muốn đăng xuất khỏi tài khoản này không?</p>
-                        <div className={styles.logoutConfirmActions}>
-                          <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button" data-testid="logout-confirm-button">
-                            Xác nhận đăng xuất
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <AnimatePresence initial={false}>
+                      {logoutConfirmOpen ? (
+                        <motion.div
+                          key="logout-panel"
+                          className={styles.logoutConfirmPanel}
+                          variants={ACCOUNT_SECTION_VARIANTS}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          transition={AUTH_PANEL_TRANSITION}
+                        >
+                          <div className={styles.logoutConfirmInner} data-testid="logout-confirm-panel">
+                            <p className={styles.logoutConfirmText}>Bạn có muốn đăng xuất khỏi tài khoản này không?</p>
+                            <div className={styles.logoutConfirmActions}>
+                              <button className={styles.logoutConfirmBtn} onClick={handleLogoutConfirm} type="button" data-testid="logout-confirm-button">
+                                Xác nhận đăng xuất
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </aside>

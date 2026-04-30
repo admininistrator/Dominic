@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { DOMINIC_AVATAR_ICON } from "../../assets/icons";
 import MessageBubble from "../MessageBubble/MessageBubble";
 import styles from "./ChatWindow.module.css";
 
@@ -21,7 +22,9 @@ function ThinkingBubble() {
 
   return (
     <div className={styles.thinkingRow} aria-live="polite" aria-label="Dominic đang suy nghĩ">
-      <div className={styles.thinkingAvatar}>D</div>
+      <div className={styles.thinkingAvatar}>
+        <img src={DOMINIC_AVATAR_ICON} alt="" className={styles.thinkingAvatarImage} />
+      </div>
       <div className={styles.thinkingCard}>
         <div className={styles.thinkingHeader}>
           <span className={styles.thinkingLabel}>Dominic</span>
@@ -46,13 +49,14 @@ function ThinkingBubble() {
   );
 }
 
-export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }) {
+export default function ChatWindow({ messages, isLoading, scopedDocuments = [], sessionTitle = "" }) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
   const visibleScopedDocuments = useMemo(
     () => (Array.isArray(scopedDocuments) ? scopedDocuments.filter(Boolean) : []),
     [scopedDocuments]
   );
+  const normalizedSessionTitle = typeof sessionTitle === "string" ? sessionTitle.trim() : "";
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -70,7 +74,12 @@ export default function ChatWindow({ messages, isLoading, scopedDocuments = [] }
   return (
     <section className={styles.container} ref={containerRef}>
       <div className={styles.topBar}>
-        <div className={styles.topBarBadge}>Dominic</div>
+        <div className={styles.topBarInner}>
+          <div className={styles.topBarBadge}>Dominic</div>
+          {normalizedSessionTitle ? (
+            <h1 className={styles.chatTitle} title={normalizedSessionTitle}>{normalizedSessionTitle}</h1>
+          ) : null}
+        </div>
       </div>
 
       {visibleScopedDocuments.length > 0 && (

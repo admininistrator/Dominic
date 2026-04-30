@@ -5,11 +5,27 @@
   padding: 18px;
 }
 
+.screenTransitionLayer,
+.workspaceStage {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.screenTransitionLayer {
+  display: grid;
+}
+
+.workspaceStage {
+  display: grid;
+}
+
 .chatView {
   min-height: 0;
   display: grid;
   grid-template-rows: 1fr auto;
   height: 100%;
+  position: relative;
+  overflow: visible;
   padding: 18px 18px 12px;
   gap: 14px;
 }
@@ -19,10 +35,210 @@
   height: 100%;
 }
 
+.workspaceLaunch {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.18), transparent 32%),
+    radial-gradient(circle at right 18%, rgba(56, 189, 248, 0.18), transparent 28%),
+    linear-gradient(180deg, var(--app-bg-top), var(--app-bg-mid) 48%, var(--app-bg-bottom));
+}
+
+.workspaceLaunchShell {
+  width: min(720px, 100%);
+  padding: 28px;
+  border-radius: 34px;
+  background: var(--shell-bg);
+  border: 1px solid var(--shell-border);
+  box-shadow: var(--shell-shadow), var(--shell-inset);
+  backdrop-filter: blur(18px);
+  animation: workspaceLaunchEnter 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.workspaceLaunchBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(224, 231, 255, 0.92);
+  color: #4338ca;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspaceLaunchTitle {
+  margin: 18px 0 10px;
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  color: #0f172a;
+}
+
+.workspaceLaunchText {
+  margin: 0;
+  max-width: 52ch;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.workspaceLaunchTimeline {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.workspaceLaunchBubble {
+  width: min(100%, 420px);
+  padding: 16px 18px;
+  border-radius: 24px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 14px 30px rgba(148, 163, 184, 0.14);
+}
+
+.workspaceLaunchBubbleUser {
+  justify-self: end;
+  background: linear-gradient(135deg, #6674ff, #5765f2);
+  border-bottom-right-radius: 10px;
+  animation: workspaceLaunchBubbleUserFloat 1.8s ease-in-out infinite;
+}
+
+.workspaceLaunchBubbleAssistant {
+  justify-self: start;
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.95), rgba(255, 255, 255, 0.98));
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-bottom-left-radius: 10px;
+  animation: workspaceLaunchBubbleAssistantFloat 2.1s ease-in-out infinite;
+}
+
+.workspaceLaunchBubbleAssistantSecondary {
+  animation-delay: 0.16s;
+}
+
+.workspaceLaunchBubbleLine {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.workspaceLaunchBubbleUser .workspaceLaunchBubbleLine {
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.workspaceLaunchBubbleAssistant .workspaceLaunchBubbleLine {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(99, 102, 241, 0.24), rgba(148, 163, 184, 0.16));
+  background-size: 200% 100%;
+  animation: workspaceLaunchShimmer 1.2s linear infinite;
+}
+
+.workspaceLaunchBubbleLineWide {
+  width: 100%;
+}
+
+.workspaceLaunchBubbleLineMid {
+  width: 76%;
+}
+
+.workspaceLaunchBubbleLineShort {
+  width: 58%;
+}
+
+.workspaceLaunchBubbleLineTiny {
+  width: 36%;
+}
+
+.workspaceLaunchProgress {
+  margin-top: 20px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.86);
+  overflow: hidden;
+}
+
+.workspaceLaunchProgressBar {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6674ff, #60a5fa, #6674ff);
+  background-size: 200% 100%;
+  animation: workspaceLaunchProgress 1.4s ease-in-out infinite;
+}
+
+@keyframes workspaceLaunchEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes workspaceLaunchShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes workspaceLaunchProgress {
+  0% {
+    transform: translateX(-12%);
+    background-position: 100% 0;
+  }
+  50% {
+    transform: translateX(74%);
+    background-position: 0 0;
+  }
+  100% {
+    transform: translateX(-12%);
+    background-position: 100% 0;
+  }
+}
+
+@keyframes workspaceLaunchBubbleUserFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes workspaceLaunchBubbleAssistantFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
 @media (max-width: 960px) {
   .workspaceView,
   .chatView {
     padding: 12px;
+  }
+
+  .workspaceLaunchShell {
+    padding: 22px;
+  }
+
+  .workspaceLaunchBubble {
+    width: min(100%, 100%);
   }
 }
 

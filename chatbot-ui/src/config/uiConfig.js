@@ -1,7 +1,5 @@
 export const TYPEWRITER_INTERVAL_MS = 12;
 
-export const DEFAULT_CHAT_MODEL = "gpt-5.4";
-
 const GPT_THINKING_EFFORT_OPTIONS = [
 	{ value: "low", label: "Low" },
 	{ value: "medium", label: "Medium" },
@@ -26,6 +24,10 @@ const KILOCODE_THINKING_MODE_OPTIONS = [
 	{ value: "instant", label: "Instant" },
 	{ value: "thinking", label: "Thinking" },
 ];
+
+export const CHAT_MODEL_AVAILABILITY = {
+	"claude-opus-4.6": false,
+};
 
 export const CHAT_MODEL_OPTIONS = [
 	{
@@ -119,11 +121,18 @@ export const CHAT_MODEL_OPTIONS = [
 		description: "From MiniMax",
 		thinkingOptions: [],
 	},
-];
+].map((option) => ({
+	...option,
+	available: (CHAT_MODEL_AVAILABILITY[option.id] ?? true) !== false,
+}));
 
 const CHAT_MODEL_GROUP_ORDER = ["OpenAI", "Anthropic", "Google", "DeepSeek", "KiloCode"];
 
 export const SUPPORTED_CHAT_MODELS = CHAT_MODEL_OPTIONS.map((option) => option.id);
+export const AVAILABLE_CHAT_MODELS = CHAT_MODEL_OPTIONS.filter((option) => option.available).map((option) => option.id);
+export const DEFAULT_CHAT_MODEL = AVAILABLE_CHAT_MODELS.includes("gpt-5.4")
+	? "gpt-5.4"
+	: AVAILABLE_CHAT_MODELS[0] || SUPPORTED_CHAT_MODELS[0] || "";
 
 function normalizeModelName(modelName) {
 	return typeof modelName === "string" ? modelName.trim().toLowerCase() : "";
@@ -140,7 +149,13 @@ export function getChatModelLabel(modelName) {
 }
 
 export function getChatModelDescription(modelName) {
-	return getChatModelOption(modelName)?.description || "";
+	const option = getChatModelOption(modelName);
+	if (!option) return "";
+	return option.available ? option.description || "" : "Not available";
+}
+
+export function isChatModelAvailable(modelName) {
+	return Boolean(getChatModelOption(modelName)?.available);
 }
 
 export function getGroupedChatModelOptions(modelNames = []) {
@@ -191,7 +206,9 @@ export function getChatModelDisplayText(modelName, effortValue, fallbackText = "
 }
 
 export function getThinkingEffortOptionsForModel(modelName) {
-	return getChatModelOption(modelName)?.thinkingOptions || [];
+	const option = getChatModelOption(modelName);
+	if (!option?.available) return [];
+	return option.thinkingOptions || [];
 }
 
 export function supportsThinkingEffort(modelName) {

@@ -4,7 +4,7 @@
   height: 100dvh;
   padding: 14px;
   gap: 14px;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   color: var(--app-text);
 }
@@ -13,12 +13,15 @@
   display: grid;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  position: relative;
+  z-index: 20;
+  overflow: visible;
   background: var(--shell-bg);
   border: 1px solid var(--shell-border);
   border-radius: 34px;
   box-shadow: var(--shell-shadow), var(--shell-inset);
   backdrop-filter: blur(12px);
+  isolation: isolate;
 }
 
 @media (max-width: 960px) {

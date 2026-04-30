@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="32" fill="url(#paint0_linear_dominic)"/>
+  <circle cx="32" cy="32" r="19" fill="#FFFFFF" fill-opacity="0.18"/>
+  <path d="M24 20H34.8C41.1 20 45 24.2 45 31.7C45 39.7 40.7 44 33.4 44H24V20ZM30.2 25.2V38.8H33C37.1 38.8 39.1 36.3 39.1 31.8C39.1 27.6 37.2 25.2 33.2 25.2H30.2Z" fill="#F8FAFC"/>
+  <path d="M45.5 18.5L48.1 23.9L53.8 24.4L49.5 28.3L50.8 34L45.5 31.1L40.2 34L41.5 28.3L37.2 24.4L42.9 23.9L45.5 18.5Z" fill="#FCD34D"/>
+  <defs>
+    <linearGradient id="paint0_linear_dominic" x1="6" y1="8" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D4ED8"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+</svg>

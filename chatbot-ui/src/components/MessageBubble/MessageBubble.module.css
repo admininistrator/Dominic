@@ -16,24 +16,28 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  font-size: 13px;
-  font-weight: 700;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-top: 1px;
 }
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .avatarUser {
   background: linear-gradient(135deg, #6477ff, #5b68f6);
-  color: #fff;
   box-shadow: 0 10px 20px rgba(99, 102, 241, 0.22);
 }
 .avatarBot {
   background: #ffffff;
-  color: #4f46e5;
   border: 1px solid #dbeafe;
-  font-size: 14px;
   box-shadow: 0 10px 20px rgba(148, 163, 184, 0.14);
 }
 

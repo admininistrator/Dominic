@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { DOMINIC_AVATAR_ICON, USER_AVATAR_ICON } from "../../assets/icons";
 import { TYPEWRITER_INTERVAL_MS } from "../../config/uiConfig";
 import styles from "./MessageBubble.module.css";
 
@@ -79,6 +80,20 @@ const IconEdit = () => (
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
+
+function ExternalLink({ href, children, className, ...props }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      {...props}
+    >
+      {children}
+    </a>
+  );
+}
 
 export default function MessageBubble({
   role,
@@ -170,7 +185,11 @@ export default function MessageBubble({
           isUser ? styles.avatarUser : styles.avatarBot
         }`}
       >
-        {isUser ? "U" : "D"}
+        <img
+          src={isUser ? USER_AVATAR_ICON : DOMINIC_AVATAR_ICON}
+          alt=""
+          className={styles.avatarImage}
+        />
       </div>
 
       <div className={styles.body}>
@@ -231,7 +250,13 @@ export default function MessageBubble({
           </div>
         ) : (
           <div className={`${styles.assistantCard} ${styles.markdown}`}>
-            <ReactMarkdown>{contentToRender}</ReactMarkdown>
+            <ReactMarkdown
+              components={{
+                a: ({ node: _node, ...props }) => <ExternalLink {...props} />,
+              }}
+            >
+              {contentToRender}
+            </ReactMarkdown>
           </div>
         )}
 
@@ -292,14 +317,9 @@ export default function MessageBubble({
                     : `doc #${source.document_id} · chunk #${source.chunk_id}`}
                 </div>
                 {source.url && (
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={styles.sourceLink}
-                  >
+                  <ExternalLink href={source.url} className={styles.sourceLink}>
                     {source.url}
-                  </a>
+                  </ExternalLink>
                 )}
                 <div className={styles.sourceSnippet}>{source.snippet}</div>
               </article>

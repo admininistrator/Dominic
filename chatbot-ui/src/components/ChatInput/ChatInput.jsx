@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getModelPickerIcon } from "../../assets/icons";
 import {
 	getChatModelDescription,
 	getChatModelLabel,
@@ -7,6 +8,7 @@ import {
   getDefaultThinkingEffortForModel,
   getThinkingEffortLabel,
   getThinkingEffortOptionsForModel,
+  isChatModelAvailable,
   supportsThinkingEffort,
 } from "../../config/uiConfig";
 import styles from "./ChatInput.module.css";
@@ -68,14 +70,6 @@ const IconDoc = () => (
   </svg>
 );
 
-const IconOrbit = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="2.4" />
-    <path d="M4 12c0-2.5 3.6-4.5 8-4.5s8 2 8 4.5-3.6 4.5-8 4.5-8-2-8-4.5Z" />
-    <path d="M7.7 7.7c1.8-1.8 5.8-.8 8.9 2.3 3.1 3.1 4.1 7.1 2.3 8.9-1.8 1.8-5.8.8-8.9-2.3-3.1-3.1-4.1-7.1-2.3-8.9Z" />
-  </svg>
-);
-
 const IconChevronDown = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 12 15 18 9" />
@@ -125,13 +119,17 @@ export default function ChatInput({
 
   const importPanelMounted = importPanelState !== "closed";
   const importPanelOpen = importPanelState === "open";
-  const activeModel = selectedModel || availableModels[0] || "";
+  const selectableModels = availableModels.filter((modelName) => isChatModelAvailable(modelName));
+  const activeModel = isChatModelAvailable(selectedModel)
+    ? selectedModel
+    : selectableModels[0] || availableModels[0] || "";
   const activeModelLabel = getChatModelLabel(activeModel);
   const groupedModelOptions = getGroupedChatModelOptions(availableModels);
   const thinkingEffortSupported = supportsThinkingEffort(activeModel);
   const thinkingEffortOptions = getThinkingEffortOptionsForModel(activeModel);
   const activeThinkingEffort = thinkingEffortByModel[activeModel] || getDefaultThinkingEffortForModel(activeModel);
   const activeThinkingEffortLabel = getThinkingEffortLabel(activeModel, activeThinkingEffort);
+  const activeModelIcon = getModelPickerIcon(activeModel);
 
   const resizeTextarea = useCallback((textarea) => {
     if (!textarea) return;
@@ -192,7 +190,7 @@ export default function ChatInput({
   }, []);
 
   const toggleModelMenu = () => {
-    if (disabled || availableModels.length === 0) return;
+    if (disabled || selectableModels.length === 0) return;
     if (modelMenuOpen) {
       closeModelMenu();
       return;
@@ -368,6 +366,7 @@ export default function ChatInput({
   };
 
   const handleModelSelect = (modelName) => {
+    if (!isChatModelAvailable(modelName)) return;
     onModelChange?.(modelName);
     closeModelMenu();
   };
@@ -541,14 +540,14 @@ export default function ChatInput({
                   className={`${styles.modelPicker} ${modelMenuOpen ? styles.modelPickerOpen : ""}`}
                   title={`Model hiện tại: ${activeModelLabel || ""}`}
                   onClick={toggleModelMenu}
-                  disabled={disabled || availableModels.length === 0}
+                  disabled={disabled || selectableModels.length === 0}
                   data-testid="chat-model-select"
                   aria-label="Chọn model AI"
                   aria-expanded={modelMenuOpen}
                   whileTap={{ y: 1 }}
                 >
                   <span className={styles.modelPickerBadge}>
-                    <IconOrbit />
+                    <img src={activeModelIcon} alt="" className={styles.modelPickerBadgeImage} />
                   </span>
                   <span className={styles.modelPickerMeta}>
                     <span className={styles.modelPickerLabel}>Model AI</span>
@@ -580,19 +579,22 @@ export default function ChatInput({
                               <div className={styles.modelGroupList}>
                                 {models.map((modelOption) => {
                                   const modelName = modelOption.id;
+                                  const isAvailable = isChatModelAvailable(modelName);
                                   const modelLabel = getChatModelLabel(modelName);
                                   const modelDescription = getChatModelDescription(modelName);
                                   const isActive = modelName === selectedModel;
                                   const thinkingEffort = thinkingEffortByModel[modelName];
-                                  const thinkingEffortEnabled = supportsThinkingEffort(modelName);
+                                  const thinkingEffortEnabled = isAvailable && supportsThinkingEffort(modelName);
                                   const thinkingEffortLabel = getThinkingEffortLabel(modelName, thinkingEffort);
                                   return (
                                     <button
                                       key={modelName}
                                       type="button"
-                                      className={`${styles.modelOption} ${isActive ? styles.modelOptionActive : ""}`}
+                                      className={`${styles.modelOption} ${isActive ? styles.modelOptionActive : ""} ${!isAvailable ? styles.modelOptionDisabled : ""}`}
                                       onClick={() => handleModelSelect(modelName)}
                                       data-testid={`chat-model-option-${modelName}`}
+                                      disabled={!isAvailable}
+                                      aria-disabled={!isAvailable}
                                     >
                                       <span className={styles.modelOptionText}>
                                         <span className={styles.modelOptionTopRow}>

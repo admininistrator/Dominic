@@ -501,6 +501,13 @@
   transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
+.modelPickerBadgeImage {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+}
+
 .modelOption:hover {
   border-color: #c7d2fe;
   background: linear-gradient(135deg, #eef2ff, #e0e7ff);
@@ -513,6 +520,25 @@
   border-color: rgba(99, 102, 241, 0.4);
   background: linear-gradient(135deg, rgba(224, 231, 255, 0.92), rgba(219, 234, 254, 0.95));
   box-shadow: 0 14px 28px rgba(99, 102, 241, 0.14);
+}
+
+.modelOptionDisabled,
+.modelOption:disabled {
+  cursor: not-allowed;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc, #f8fafc);
+  box-shadow: none;
+  transform: none;
+}
+
+.modelOptionDisabled:hover,
+.modelOption:disabled:hover {
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc, #f8fafc);
+  box-shadow: none;
+  transform: none;
 }
 
 .modelOptionTopRow {

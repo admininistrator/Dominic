@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "./components/App/App";
 import AdminPanel from "./components/AdminPanel/AdminPanel";
@@ -19,7 +20,6 @@ import {
 import {
   createSession,
   deleteSession,
-  renameSession,
   getSessionMessages,
   getSessions,
   getUsage,
@@ -40,6 +40,7 @@ import {
 } from "./service/knowledgeApi";
 import { clearAuthToken, getStoredAuthToken, setAuthToken } from "./service/apiClient";
 import {
+  AVAILABLE_CHAT_MODELS,
   DEFAULT_CHAT_MODEL,
   SUPPORTED_CHAT_MODELS,
   getChatModelDisplayText,
@@ -55,6 +56,53 @@ const VIEW_ADMIN = "admin";
 const THEME_STORAGE_KEY = "dominic-ui-theme";
 const CHAT_MODEL_STORAGE_KEY = "dominic-chat-model";
 const CHAT_MODEL_EFFORT_STORAGE_KEY = "dominic-chat-model-effort";
+const AUTO_SESSION_TITLE_PATTERN = /^(new chat|chat\s+\d+)$/i;
+const WORKSPACE_ENTRY_MIN_MS = 1000;
+const SCREEN_STAGE_TRANSITION = { duration: 0.34, ease: [0.22, 1, 0.36, 1] };
+
+function getScreenStageVariants(stage, direction) {
+  if (stage === "login") {
+    if (direction === "backward") {
+      return {
+        initial: { opacity: 0, x: -28, y: 8, scale: 0.992, filter: "blur(9px)" },
+        animate: { opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, x: 22, y: -10, scale: 1.006, filter: "blur(8px)" },
+      };
+    }
+
+    return {
+      initial: { opacity: 0, y: 14, scale: 0.988, filter: "blur(8px)" },
+      animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+      exit: { opacity: 0, y: -14, scale: 1.01, filter: "blur(10px)" },
+    };
+  }
+
+  if (stage === "entry") {
+    return direction === "backward"
+      ? {
+          initial: { opacity: 0, x: -18, y: 12, scale: 0.994, filter: "blur(8px)" },
+          animate: { opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" },
+          exit: { opacity: 0, x: 18, y: -12, scale: 1.006, filter: "blur(8px)" },
+        }
+      : {
+          initial: { opacity: 0, y: 18, scale: 0.992, filter: "blur(7px)" },
+          animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+          exit: { opacity: 0, y: -16, scale: 1.008, filter: "blur(8px)" },
+        };
+  }
+
+  return direction === "backward"
+    ? {
+        initial: { opacity: 0, x: 26, y: 10, scale: 0.994, filter: "blur(8px)" },
+        animate: { opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, x: -26, y: -10, scale: 1.006, filter: "blur(7px)" },
+      }
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.994, filter: "blur(8px)" },
+        animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, y: -12, scale: 1.006, filter: "blur(7px)" },
+      };
+}
 
 const EMPTY_USAGE = {
   username: "",
@@ -124,7 +172,7 @@ function getInitialChatModel() {
   if (typeof window === "undefined") return DEFAULT_CHAT_MODEL;
 
   const storedModel = window.localStorage.getItem(CHAT_MODEL_STORAGE_KEY);
-  if (storedModel && SUPPORTED_CHAT_MODELS.includes(storedModel)) {
+  if (storedModel && AVAILABLE_CHAT_MODELS.includes(storedModel)) {
     return storedModel;
   }
 
@@ -143,7 +191,7 @@ function getInitialThinkingEffortByModel() {
 
     return Object.fromEntries(
       Object.entries(parsed)
-        .filter(([modelName]) => SUPPORTED_CHAT_MODELS.includes(modelName))
+        .filter(([modelName]) => AVAILABLE_CHAT_MODELS.includes(modelName))
         .map(([modelName, effort]) => [modelName, normalizeThinkingEffortForModel(modelName, effort)])
         .filter(([, effort]) => Boolean(effort))
     );
@@ -235,6 +283,70 @@ function buildChatErrorMessage(message) {
   };
 }
 
+function waitForMs(duration) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, duration);
+  });
+}
+
+function WorkspaceEntryScreen() {
+  return (
+    <div className="workspaceLaunch" aria-live="polite">
+      <div className="workspaceLaunchShell">
+        <div className="workspaceLaunchBadge">Dominic Workspace</div>
+        <h2 className="workspaceLaunchTitle">Đang tải đoạn chat của bạn</h2>
+        <p className="workspaceLaunchText">
+          Dominic đang khôi phục lịch sử hội thoại, đồng bộ tài liệu đã gắn và chuẩn bị không gian làm việc.
+        </p>
+        <div className="workspaceLaunchTimeline" aria-hidden="true">
+          <div className="workspaceLaunchBubble workspaceLaunchBubbleUser">
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineWide" />
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineShort" />
+          </div>
+          <div className="workspaceLaunchBubble workspaceLaunchBubbleAssistant">
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineMid" />
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineWide" />
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineTiny" />
+          </div>
+          <div className="workspaceLaunchBubble workspaceLaunchBubbleAssistant workspaceLaunchBubbleAssistantSecondary">
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineMid" />
+            <span className="workspaceLaunchBubbleLine workspaceLaunchBubbleLineShort" />
+          </div>
+        </div>
+        <div className="workspaceLaunchProgress">
+          <span className="workspaceLaunchProgressBar" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isAutoGeneratedSessionTitle(title) {
+  return AUTO_SESSION_TITLE_PATTERN.test(typeof title === "string" ? title.trim() : "");
+}
+
+function mergeSessionsForUi(previousSessions, nextSessions, { animateGeneratedTitles = false } = {}) {
+  const previousById = new Map((previousSessions || []).map((session) => [session.id, session]));
+
+  return (nextSessions || []).map((session) => {
+    const previousSession = previousById.get(session.id);
+    const previousTitle = previousSession?.title || "";
+    const nextTitle = session?.title || "";
+
+    return {
+      ...session,
+      animateTitle: Boolean(
+        animateGeneratedTitles &&
+        previousSession &&
+        previousTitle &&
+        previousTitle !== nextTitle &&
+        isAutoGeneratedSessionTitle(previousTitle) &&
+        !isAutoGeneratedSessionTitle(nextTitle)
+      ),
+    };
+  });
+}
+
 export default function App() {
   const imageCacheRef = useRef(new Map());
   const documentCacheRef = useRef(new Map());
@@ -259,6 +371,8 @@ export default function App() {
   const [isKnowledgeLoading, setIsKnowledgeLoading] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [isPasswordBusy, setIsPasswordBusy] = useState(false);
+  const [isEnteringWorkspace, setIsEnteringWorkspace] = useState(false);
+  const [screenTransitionDirection, setScreenTransitionDirection] = useState("forward");
   const [loginError, setLoginError] = useState("");
   const [usage, setUsage] = useState(EMPTY_USAGE);
   const [theme, setTheme] = useState(getInitialTheme);
@@ -271,6 +385,11 @@ export default function App() {
   }, [selectedChatModel]);
 
   useEffect(() => {
+    if (!selectedChatModel || AVAILABLE_CHAT_MODELS.includes(selectedChatModel)) return;
+    setSelectedChatModel(DEFAULT_CHAT_MODEL);
+  }, [selectedChatModel]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(CHAT_MODEL_EFFORT_STORAGE_KEY, JSON.stringify(thinkingEffortByModel));
   }, [thinkingEffortByModel]);
@@ -279,6 +398,7 @@ export default function App() {
     imageCacheRef.current.clear();
     documentCacheRef.current.clear();
     clearAuthToken();
+    setScreenTransitionDirection("backward");
     setAuthUser(null);
     setActiveView(VIEW_CHAT);
     setSessions([]);
@@ -292,6 +412,7 @@ export default function App() {
     setAdminUsers([]);
     setAdminAnalytics(null);
     setUsage(EMPTY_USAGE);
+    setIsEnteringWorkspace(false);
     setLoginError(nextError);
   }, []);
 
@@ -393,10 +514,14 @@ export default function App() {
     setUsage(data);
   }, []);
 
-  const loadSessions = useCallback(async () => {
+  const loadSessions = useCallback(async (options = {}) => {
     const rows = await getSessions();
-    setSessions(rows);
-    return rows;
+    let mergedRows = rows;
+    setSessions((current) => {
+      mergedRows = mergeSessionsForUi(current, rows, options);
+      return mergedRows;
+    });
+    return mergedRows;
   }, []);
 
   const loadKnowledgeDocumentDetails = useCallback(async (documentId) => {
@@ -485,7 +610,7 @@ export default function App() {
       const rows = await loadSessions();
       if (rows.length === 0) {
         const newSession = await createSession({ title: "Chat 1" });
-        setSessions([newSession]);
+        setSessions([{ ...newSession, animateTitle: false }]);
         setActiveSessionId(newSession.id);
         setMessages([]);
         return [newSession];
@@ -528,6 +653,23 @@ export default function App() {
       }
     },
     [ensureSessionSelected, loadAdminAnalytics, loadAdminUsers, loadKnowledgeDocuments, refreshUsage, showChatLoadError]
+  );
+
+  const runWorkspaceEntryTransition = useCallback(
+    async (userInput) => {
+      const startedAt = Date.now();
+      setIsEnteringWorkspace(true);
+      try {
+        await hydrateAuthenticatedWorkspace(userInput);
+      } finally {
+        const elapsedMs = Date.now() - startedAt;
+        if (elapsedMs < WORKSPACE_ENTRY_MIN_MS) {
+          await waitForMs(WORKSPACE_ENTRY_MIN_MS - elapsedMs);
+        }
+        setIsEnteringWorkspace(false);
+      }
+    },
+    [hydrateAuthenticatedWorkspace]
   );
 
   useEffect(() => {
@@ -619,12 +761,14 @@ export default function App() {
   const handleLogin = async ({ username, password }) => {
     setIsAuthLoading(true);
     setLoginError("");
+    setScreenTransitionDirection("forward");
     try {
       const data = await login({ username, password });
       setAuthToken(data.access_token);
-      await hydrateAuthenticatedWorkspace(data);
+      await runWorkspaceEntryTransition(data);
     } catch (error) {
       clearAuthToken();
+      setIsEnteringWorkspace(false);
       setLoginError(extractErrorMessage(error, "Dang nhap that bai."));
     } finally {
       setIsAuthLoading(false);
@@ -634,6 +778,7 @@ export default function App() {
   const handleRegister = async ({ username, password, confirmPassword }) => {
     setIsAuthLoading(true);
     setLoginError("");
+    setScreenTransitionDirection("forward");
     try {
       const data = await register({
         username,
@@ -641,9 +786,10 @@ export default function App() {
         confirm_password: confirmPassword,
       });
       setAuthToken(data.access_token);
-      await hydrateAuthenticatedWorkspace(data);
+      await runWorkspaceEntryTransition(data);
     } catch (error) {
       clearAuthToken();
+      setIsEnteringWorkspace(false);
       setLoginError(extractErrorMessage(error, "Dang ky that bai."));
     } finally {
       setIsAuthLoading(false);
@@ -706,20 +852,11 @@ export default function App() {
           await loadSessionMessages(rows[0].id);
         } else {
           const newSession = await createSession({ title: "Chat 1" });
-          setSessions([newSession]);
+          setSessions([{ ...newSession, animateTitle: false }]);
           setActiveSessionId(newSession.id);
           setMessages([]);
         }
       }
-    } catch (error) {
-      if (isUnauthorizedError(error)) resetAuthState("Phiên đăng nhập đã hết hạn.");
-    }
-  };
-
-  const handleRenameSession = async (sessionId, title) => {
-    try {
-      await renameSession(sessionId, title);
-      await loadSessions();
     } catch (error) {
       if (isUnauthorizedError(error)) resetAuthState("Phiên đăng nhập đã hết hạn.");
     }
@@ -730,7 +867,7 @@ export default function App() {
   };
 
   const handleThinkingEffortChange = useCallback((modelName, effort) => {
-    if (!SUPPORTED_CHAT_MODELS.includes(modelName)) return;
+    if (!AVAILABLE_CHAT_MODELS.includes(modelName)) return;
     const normalized = normalizeThinkingEffortForModel(modelName, effort);
     if (!normalized) return;
 
@@ -829,7 +966,7 @@ export default function App() {
         animateAssistantRequestId: data.request_id,
         applyIfActiveOnly: true,
       });
-      await Promise.all([refreshUsage(), loadSessions()]);
+      await Promise.all([refreshUsage(), loadSessions({ animateGeneratedTitles: true })]);
     } catch (error) {
       if (isUnauthorizedError(error)) {
         resetAuthState("Phien dang nhap da het han. Vui long dang nhap lai.");
@@ -1113,119 +1250,144 @@ export default function App() {
     }
   }, [activeView, adminUsers.length, authUser?.role, handleRefreshAdminUsers, isAdminLoading]);
 
-  if (!authUser) {
-    return (
-      <Login
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        onResetPassword={handleResetPassword}
-        isLoading={isAuthLoading || isBootstrapping}
-        isBootstrapping={isBootstrapping}
-        error={loginError}
-      />
-    );
-  }
+  let screenKey = "login";
+  let screenClassName = "screenTransitionLayer";
+  let screenContent = (
+    <Login
+      onLogin={handleLogin}
+      onRegister={handleRegister}
+      onResetPassword={handleResetPassword}
+      isLoading={isAuthLoading || isBootstrapping}
+      isBootstrapping={isBootstrapping}
+      error={loginError}
+    />
+  );
 
-  const currentSessionDocuments = activeSessionId
-    ? knowledgeDocuments.filter((document) => document.session_id === activeSessionId)
-    : [];
-  const selectedKnowledgeDocument =
-    knowledgeDocuments.find((document) => document.id === selectedKnowledgeDocumentId) || null;
-  const visibleScopedDocuments = currentSessionDocuments.length > 0
-    ? currentSessionDocuments
-    : selectedKnowledgeDocument &&
-      (selectedKnowledgeDocument.session_id == null ||
-        selectedKnowledgeDocument.session_id === activeSessionId)
-      ? [selectedKnowledgeDocument]
+  if (authUser && isEnteringWorkspace) {
+    screenKey = "entry";
+    screenContent = <WorkspaceEntryScreen />;
+  } else if (authUser) {
+    const currentSessionDocuments = activeSessionId
+      ? knowledgeDocuments.filter((document) => document.session_id === activeSessionId)
       : [];
+    const selectedKnowledgeDocument =
+      knowledgeDocuments.find((document) => document.id === selectedKnowledgeDocumentId) || null;
+    const visibleScopedDocuments = currentSessionDocuments.length > 0
+      ? currentSessionDocuments
+      : selectedKnowledgeDocument &&
+        (selectedKnowledgeDocument.session_id == null ||
+          selectedKnowledgeDocument.session_id === activeSessionId)
+        ? [selectedKnowledgeDocument]
+        : [];
+    const activeSession = sessions.find((session) => session.id === activeSessionId) || null;
 
-  let mainContent;
+    let mainContent;
 
-  if (activeView === VIEW_KNOWLEDGE) {
-    mainContent = (
-      <div className="workspaceView">
-        <KnowledgePanel
-          documents={knowledgeDocuments}
-          selectedDocumentId={selectedKnowledgeDocumentId}
-          chunks={knowledgeChunks}
-          jobs={knowledgeJobs}
-          searchState={knowledgeSearch}
-          isLoading={isKnowledgeLoading}
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelectDocument={handleSelectKnowledgeDocument}
-          onRefreshDocuments={handleRefreshKnowledgeDocuments}
-          onUploadFile={handleUploadKnowledgeFile}
-          onIngestText={handleIngestKnowledgeText}
-          onSearchKnowledge={handleSearchKnowledge}
-          onReindexDocument={handleReindexKnowledgeDocument}
-          onDeleteDocument={handleDeleteKnowledgeDocument}
-        />
-      </div>
-    );
-  } else if (activeView === VIEW_ADMIN && authUser.role === "admin") {
-    mainContent = (
-      <div className="workspaceView">
-        <AdminPanel
-          users={adminUsers}
-          analytics={adminAnalytics}
-          auditLogs={adminAuditLogs}
-          costMetrics={adminCostMetrics}
-          currentUsername={authUser.username}
-          isLoading={isAdminLoading}
-          onRefreshUsers={handleRefreshAdminUsers}
-          onSetUserRole={handleSetAdminUserRole}
-          onGenerateResetToken={handleGenerateResetToken}
-          onLoadAuditLogs={handleLoadAuditLogs}
-          onLoadCostMetrics={handleLoadCostMetrics}
-        />
-      </div>
-    );
-  } else {
-    mainContent = (
-      <div className="chatView">
-        <ChatWindow
-          messages={messages}
-          isLoading={isChatLoading}
-          scopedDocuments={visibleScopedDocuments}
-        />
-        <ChatInput 
-          disabled={!authUser?.username || isChatLoading} 
-          onSendMessage={handleSendMessage}
-          onUploadKnowledgeFile={(file) => handleUploadKnowledgeFile(file, activeSessionId)}
-          onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
-          isKnowledgeLoading={isKnowledgeLoading}
-          sessionDocuments={currentSessionDocuments}
-          selectedModel={selectedChatModel}
-          availableModels={SUPPORTED_CHAT_MODELS}
-          onModelChange={setSelectedChatModel}
-          thinkingEffortByModel={thinkingEffortByModel}
-          onThinkingEffortChange={handleThinkingEffortChange}
-        />
-      </div>
+    if (activeView === VIEW_KNOWLEDGE) {
+      mainContent = (
+        <div className="workspaceView">
+          <KnowledgePanel
+            documents={knowledgeDocuments}
+            selectedDocumentId={selectedKnowledgeDocumentId}
+            chunks={knowledgeChunks}
+            jobs={knowledgeJobs}
+            searchState={knowledgeSearch}
+            isLoading={isKnowledgeLoading}
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelectDocument={handleSelectKnowledgeDocument}
+            onRefreshDocuments={handleRefreshKnowledgeDocuments}
+            onUploadFile={handleUploadKnowledgeFile}
+            onIngestText={handleIngestKnowledgeText}
+            onSearchKnowledge={handleSearchKnowledge}
+            onReindexDocument={handleReindexKnowledgeDocument}
+            onDeleteDocument={handleDeleteKnowledgeDocument}
+          />
+        </div>
+      );
+    } else if (activeView === VIEW_ADMIN && authUser.role === "admin") {
+      mainContent = (
+        <div className="workspaceView">
+          <AdminPanel
+            users={adminUsers}
+            analytics={adminAnalytics}
+            auditLogs={adminAuditLogs}
+            costMetrics={adminCostMetrics}
+            currentUsername={authUser.username}
+            isLoading={isAdminLoading}
+            onRefreshUsers={handleRefreshAdminUsers}
+            onSetUserRole={handleSetAdminUserRole}
+            onGenerateResetToken={handleGenerateResetToken}
+            onLoadAuditLogs={handleLoadAuditLogs}
+            onLoadCostMetrics={handleLoadCostMetrics}
+          />
+        </div>
+      );
+    } else {
+      mainContent = (
+        <div className="chatView">
+          <ChatWindow
+            messages={messages}
+            isLoading={isChatLoading}
+            scopedDocuments={visibleScopedDocuments}
+            sessionTitle={activeSession?.title || ""}
+          />
+          <ChatInput
+            disabled={!authUser?.username || isChatLoading}
+            onSendMessage={handleSendMessage}
+            onUploadKnowledgeFile={(file) => handleUploadKnowledgeFile(file, activeSessionId)}
+            onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
+            isKnowledgeLoading={isKnowledgeLoading}
+            sessionDocuments={currentSessionDocuments}
+            selectedModel={selectedChatModel}
+            availableModels={SUPPORTED_CHAT_MODELS}
+            onModelChange={setSelectedChatModel}
+            thinkingEffortByModel={thinkingEffortByModel}
+            onThinkingEffortChange={handleThinkingEffortChange}
+          />
+        </div>
+      );
+    }
+
+    screenKey = "workspace";
+    screenClassName = "workspaceStage";
+    screenContent = (
+      <AppLayout
+        user={authUser}
+        activeView={activeView}
+        onChangeView={handleChangeView}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onCreateSession={handleCreateSession}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onLogout={handleLogout}
+        onChangePassword={handleChangePassword}
+        theme={theme}
+        onThemeChange={setTheme}
+        isPasswordBusy={isPasswordBusy}
+        totalTokenUsed={usage.total_token_used}
+        maxTokensPerDay={usage.max_tokens_per_day}
+      >
+        {mainContent}
+      </AppLayout>
     );
   }
+
+  const screenStageVariants = getScreenStageVariants(screenKey, screenTransitionDirection);
 
   return (
-    <AppLayout
-      user={authUser}
-      activeView={activeView}
-      onChangeView={handleChangeView}
-      sessions={sessions}
-      activeSessionId={activeSessionId}
-      onCreateSession={handleCreateSession}
-      onSelectSession={handleSelectSession}
-      onDeleteSession={handleDeleteSession}
-      onRenameSession={handleRenameSession}
-      onLogout={handleLogout}
-      onChangePassword={handleChangePassword}
-      theme={theme}
-      onThemeChange={setTheme}
-      isPasswordBusy={isPasswordBusy}
-      totalTokenUsed={usage.total_token_used}
-      maxTokensPerDay={usage.max_tokens_per_day}
-    >
-      {mainContent}
-    </AppLayout>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={screenKey}
+        className={screenClassName}
+        initial={screenStageVariants.initial}
+        animate={screenStageVariants.animate}
+        exit={screenStageVariants.exit}
+        transition={SCREEN_STAGE_TRANSITION}
+      >
+        {screenContent}
+      </motion.div>
+    </AnimatePresence>
   );
 }

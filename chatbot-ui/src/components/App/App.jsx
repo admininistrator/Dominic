@@ -10,7 +10,6 @@ export default function App({
   onCreateSession,
   onSelectSession,
   onDeleteSession,
-  onRenameSession,
   onLogout,
   onChangePassword,
   theme,
@@ -31,7 +30,6 @@ export default function App({
         onCreateSession={onCreateSession}
         onSelectSession={onSelectSession}
         onDeleteSession={onDeleteSession}
-        onRenameSession={onRenameSession}
         onLogout={onLogout}
         onChangePassword={onChangePassword}
         theme={theme}

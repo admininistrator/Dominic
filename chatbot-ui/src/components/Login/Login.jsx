@@ -134,9 +134,9 @@ const SHOWCASE_CONTENT_BY_MODE = {
 };
 
 function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs = 14 } = {}) {
-  const [text, setText] = useState(targetText);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const currentTextRef = useRef(targetText);
+  const [text, setText] = useState(() => (enabled ? "" : targetText));
+  const [isAnimating, setIsAnimating] = useState(() => enabled && Boolean(targetText));
+  const currentTextRef = useRef(enabled ? "" : targetText);
   const timeoutRef = useRef(null);
 
   useEffect(() => {

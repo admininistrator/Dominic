@@ -1,11 +1,6 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion as Motion } from "framer-motion";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "./components/App/App";
-import AdminPanel from "./components/AdminPanel/AdminPanel";
-import ChatInput from "./components/ChatInput/ChatInput";
-import ChatWindow from "./components/ChatWindow/ChatWindow";
-import KnowledgePanel from "./components/KnowledgePanel/KnowledgePanel";
-import Login from "./components/Login/Login";
 import "./App.css";
 import {
   adminResetPassword,
@@ -13,6 +8,7 @@ import {
   getMe,
   listUsers,
   login,
+  logout,
   register,
   resetPassword,
   setUserRole,
@@ -23,7 +19,7 @@ import {
   getSessionMessages,
   getSessions,
   getUsage,
-  sendChatMessage,
+  sendChatMessageStream,
 } from "./service/chatApi";
 import {
   deleteKnowledgeDocument,
@@ -38,7 +34,7 @@ import {
   searchKnowledge,
   uploadKnowledgeFile,
 } from "./service/knowledgeApi";
-import { clearAuthToken, getStoredAuthToken, setAuthToken } from "./service/apiClient";
+import { clearAuthSession, getStoredAuthToken, setAuthSession } from "./service/apiClient";
 import {
   AVAILABLE_CHAT_MODELS,
   DEFAULT_CHAT_MODEL,
@@ -50,6 +46,12 @@ import {
 } from "./config/uiConfig";
 import "./styles/globals.css";
 
+const AdminPanel = lazy(() => import("./components/AdminPanel/AdminPanel"));
+const ChatInput = lazy(() => import("./components/ChatInput/ChatInput"));
+const ChatWindow = lazy(() => import("./components/ChatWindow/ChatWindow"));
+const KnowledgePanel = lazy(() => import("./components/KnowledgePanel/KnowledgePanel"));
+const Login = lazy(() => import("./components/Login/Login"));
+
 const VIEW_CHAT = "chat";
 const VIEW_KNOWLEDGE = "knowledge";
 const VIEW_ADMIN = "admin";
@@ -59,6 +61,19 @@ const CHAT_MODEL_EFFORT_STORAGE_KEY = "dominic-chat-model-effort";
 const AUTO_SESSION_TITLE_PATTERN = /^(new chat|chat\s+\d+)$/i;
 const WORKSPACE_ENTRY_MIN_MS = 1000;
 const SCREEN_STAGE_TRANSITION = { duration: 0.34, ease: [0.22, 1, 0.36, 1] };
+const SESSION_MESSAGES_PAGE_SIZE = 30;
+
+function createEmptyMessagePagination(limit = SESSION_MESSAGES_PAGE_SIZE) {
+  return {
+    hasMore: false,
+    nextBeforeId: null,
+    limit,
+  };
+}
+
+function LazyViewFallback({ message }) {
+  return <div aria-live="polite">{message}</div>;
+}
 
 function getScreenStageVariants(stage, direction) {
   if (stage === "login") {
@@ -351,11 +366,14 @@ export default function App() {
   const imageCacheRef = useRef(new Map());
   const documentCacheRef = useRef(new Map());
   const activeSessionIdRef = useRef(null);
+  const activeChatAbortRef = useRef(null);
+  const streamingSessionIdRef = useRef(null);
   const [authUser, setAuthUser] = useState(null);
   const [activeView, setActiveView] = useState(VIEW_CHAT);
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [messagePagination, setMessagePagination] = useState(() => createEmptyMessagePagination());
   const [knowledgeDocuments, setKnowledgeDocuments] = useState([]);
   const [selectedKnowledgeDocumentId, setSelectedKnowledgeDocumentId] = useState(null);
   const [knowledgeChunks, setKnowledgeChunks] = useState([]);
@@ -368,6 +386,8 @@ export default function App() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatStreaming, setIsChatStreaming] = useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [isKnowledgeLoading, setIsKnowledgeLoading] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [isPasswordBusy, setIsPasswordBusy] = useState(false);
@@ -395,15 +415,19 @@ export default function App() {
   }, [thinkingEffortByModel]);
 
   const resetAuthState = useCallback((nextError = "") => {
+    activeChatAbortRef.current?.abort();
+    activeChatAbortRef.current = null;
+    streamingSessionIdRef.current = null;
     imageCacheRef.current.clear();
     documentCacheRef.current.clear();
-    clearAuthToken();
+    clearAuthSession();
     setScreenTransitionDirection("backward");
     setAuthUser(null);
     setActiveView(VIEW_CHAT);
     setSessions([]);
     setActiveSessionId(null);
     setMessages([]);
+    setMessagePagination(createEmptyMessagePagination());
     setKnowledgeDocuments([]);
     setSelectedKnowledgeDocumentId(null);
     setKnowledgeChunks([]);
@@ -412,6 +436,8 @@ export default function App() {
     setAdminUsers([]);
     setAdminAnalytics(null);
     setUsage(EMPTY_USAGE);
+    setIsChatStreaming(false);
+    setIsLoadingOlderMessages(false);
     setIsEnteringWorkspace(false);
     setLoginError(nextError);
   }, []);
@@ -423,12 +449,27 @@ export default function App() {
   }, [activeSessionId]);
 
   useEffect(() => {
+    if (
+      streamingSessionIdRef.current &&
+      activeSessionId &&
+      streamingSessionIdRef.current !== activeSessionId
+    ) {
+      activeChatAbortRef.current?.abort();
+    }
+  }, [activeSessionId]);
+
+  useEffect(() => () => {
+    activeChatAbortRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   const showChatLoadError = useCallback((error, fallback = "Không tải được lịch sử chat từ database.") => {
+    setMessagePagination(createEmptyMessagePagination());
     setMessages([buildChatErrorMessage(extractErrorMessage(error, fallback))]);
   }, []);
 
@@ -580,9 +621,18 @@ export default function App() {
   }, []);
 
   const loadSessionMessages = useCallback(async (sessionId, options = {}) => {
-    const { animateAssistantRequestId = null, applyIfActiveOnly = false } = options;
-    const rows = await getSessionMessages(sessionId);
-    const nextMessages = rows.map((row) => {
+    const {
+      animateAssistantRequestId = null,
+      applyIfActiveOnly = false,
+      beforeId = null,
+      limit = SESSION_MESSAGES_PAGE_SIZE,
+      mode = beforeId ? "prepend" : "replace",
+    } = options;
+    const { items, pagination } = await getSessionMessages(sessionId, {
+      limit,
+      beforeId,
+    });
+    const nextMessages = items.map((row) => {
       const mappedRow = mapHistoryRowToUiMessage(
         row,
         resolveMessageImages(sessionId, row),
@@ -599,10 +649,15 @@ export default function App() {
     });
 
     if (!applyIfActiveOnly || activeSessionIdRef.current === sessionId) {
-      setMessages(nextMessages);
+      setMessages((current) => (mode === "prepend" ? [...nextMessages, ...current] : nextMessages));
+      setMessagePagination({
+        hasMore: Boolean(pagination?.hasMore),
+        nextBeforeId: pagination?.nextBeforeId ?? null,
+        limit: pagination?.limit ?? limit,
+      });
     }
 
-    return nextMessages;
+    return { items: nextMessages, pagination };
   }, [resolveMessageDocuments, resolveMessageImages]);
 
   const ensureSessionSelected = useCallback(
@@ -613,6 +668,7 @@ export default function App() {
         setSessions([{ ...newSession, animateTitle: false }]);
         setActiveSessionId(newSession.id);
         setMessages([]);
+        setMessagePagination(createEmptyMessagePagination());
         return [newSession];
       }
 
@@ -721,7 +777,7 @@ export default function App() {
   );
 
   const handleCreateSession = async () => {
-    if (!authUser?.username) return;
+    if (!authUser?.username || isChatStreaming) return;
     setIsChatLoading(true);
     try {
       const row = await createSession({
@@ -730,6 +786,7 @@ export default function App() {
       await loadSessions();
       setActiveSessionId(row.id);
       setMessages([]);
+      setMessagePagination(createEmptyMessagePagination());
     } catch (error) {
       if (isUnauthorizedError(error)) {
         resetAuthState("Phien dang nhap da het han. Vui long dang nhap lai.");
@@ -742,7 +799,7 @@ export default function App() {
   };
 
   const handleSelectSession = async (sessionId) => {
-    if (!authUser?.username) return;
+    if (!authUser?.username || isChatStreaming) return;
     setIsChatLoading(true);
     try {
       setActiveSessionId(sessionId);
@@ -764,10 +821,10 @@ export default function App() {
     setScreenTransitionDirection("forward");
     try {
       const data = await login({ username, password });
-      setAuthToken(data.access_token);
+      setAuthSession(data);
       await runWorkspaceEntryTransition(data);
     } catch (error) {
-      clearAuthToken();
+      clearAuthSession();
       setIsEnteringWorkspace(false);
       setLoginError(extractErrorMessage(error, "Dang nhap that bai."));
     } finally {
@@ -785,10 +842,10 @@ export default function App() {
         password,
         confirm_password: confirmPassword,
       });
-      setAuthToken(data.access_token);
+      setAuthSession(data);
       await runWorkspaceEntryTransition(data);
     } catch (error) {
-      clearAuthToken();
+      clearAuthSession();
       setIsEnteringWorkspace(false);
       setLoginError(extractErrorMessage(error, "Dang ky that bai."));
     } finally {
@@ -819,6 +876,7 @@ export default function App() {
     setIsPasswordBusy(true);
     try {
       const data = await changePassword(payload);
+      resetAuthState(data.message || "Mật khẩu đã được đổi. Vui lòng đăng nhập lại.");
       return {
         success: true,
         message: data.message || "Đổi mật khẩu thành công.",
@@ -837,6 +895,7 @@ export default function App() {
   };
 
   const handleDeleteSession = async (sessionId) => {
+    if (isChatStreaming) return;
     try {
       await deleteSession(sessionId);
       for (const key of imageCacheRef.current.keys()) {
@@ -855,6 +914,7 @@ export default function App() {
           setSessions([{ ...newSession, animateTitle: false }]);
           setActiveSessionId(newSession.id);
           setMessages([]);
+          setMessagePagination(createEmptyMessagePagination());
         }
       }
     } catch (error) {
@@ -862,8 +922,12 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
-    resetAuthState("");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      resetAuthState("");
+    }
   };
 
   const handleThinkingEffortChange = useCallback((modelName, effort) => {
@@ -878,7 +942,7 @@ export default function App() {
   }, []);
 
   const handleSendMessage = async (text, images = [], options = {}) => {
-    if (!authUser?.username || !activeSessionId) return;
+    if (!authUser?.username || !activeSessionId || isChatStreaming) return;
 
     const targetSessionId = activeSessionId;
     const sessionScopedDocuments = normalizeMessageDocuments(
@@ -904,6 +968,7 @@ export default function App() {
 
     const normalizedImages = normalizeMessageImages(images);
     const optimisticMessageId = createId();
+    const assistantMessageId = createId();
     const optimisticRequestId =
       normalizedImages.length > 0 || sessionScopedDocuments.length > 0
         ? `pending:${optimisticMessageId}`
@@ -926,6 +991,7 @@ export default function App() {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsChatLoading(true);
+    setIsChatStreaming(true);
 
     try {
       const effectiveModel = options.model || selectedChatModel;
@@ -936,8 +1002,62 @@ export default function App() {
       const reasoningEffort = supportsThinkingEffort(effectiveModel)
         ? requestedThinkingEffort || getDefaultThinkingEffortForModel(effectiveModel)
         : undefined;
+      const placeholderAssistantMeta = normalizeAssistantMeta({
+        model: effectiveModel,
+        reasoning_effort: reasoningEffort,
+        display_text: getChatModelDisplayText(effectiveModel, reasoningEffort, effectiveModel),
+      });
+      let streamedReply = "";
+      let assistantMessageInserted = false;
+      const streamController = new AbortController();
 
-      const data = await sendChatMessage({
+      activeChatAbortRef.current = streamController;
+      streamingSessionIdRef.current = targetSessionId;
+
+      const syncResolvedRequestId = (resolvedRequestId) => {
+        if (!resolvedRequestId) return;
+        if (optimisticRequestId) {
+          moveCachedMessageImages(targetSessionId, optimisticRequestId, resolvedRequestId);
+          moveCachedMessageDocuments(targetSessionId, optimisticRequestId, resolvedRequestId);
+        }
+        setMessages((prev) => prev.map((message) => {
+          if (message.id === optimisticMessageId) {
+            return {
+              ...message,
+              requestId: resolvedRequestId,
+              images: normalizedImages,
+              documents: sessionScopedDocuments,
+            };
+          }
+          if (message.id === assistantMessageId) {
+            return {
+              ...message,
+              requestId: resolvedRequestId,
+            };
+          }
+          return message;
+        }));
+      };
+
+      const ensureAssistantMessage = (initialContent = "") => {
+        if (assistantMessageInserted) return;
+        assistantMessageInserted = true;
+        setIsChatLoading(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMessageId,
+            role: "assistant",
+            content: initialContent,
+            sources: [],
+            retrieval: null,
+            assistantMeta: placeholderAssistantMeta,
+            animate: false,
+          },
+        ]);
+      };
+
+      await sendChatMessageStream({
         session_id: targetSessionId,
         message: text,
         knowledge_document_id: effectiveKnowledgeDocumentId,
@@ -945,29 +1065,60 @@ export default function App() {
         model: effectiveModel,
         reasoning_effort: reasoningEffort,
         images: images.length > 0 ? images : undefined,
-      });
+      }, {
+        signal: streamController.signal,
+        onEvent: ({ event, data }) => {
+          if (event === "start") {
+            syncResolvedRequestId(data?.request_id);
+            return;
+          }
 
-      if (optimisticRequestId && data.request_id) {
-        moveCachedMessageImages(targetSessionId, optimisticRequestId, data.request_id);
-        moveCachedMessageDocuments(targetSessionId, optimisticRequestId, data.request_id);
-        setMessages((prev) => prev.map((message) => (
-          message.id === optimisticMessageId
-            ? {
-                ...message,
-                requestId: data.request_id,
-                images: normalizedImages,
-                documents: sessionScopedDocuments,
-              }
-            : message
-        )));
-      }
+          if (event === "delta") {
+            const deltaText = typeof data?.text === "string" ? data.text : "";
+            if (!deltaText) return;
 
-      await loadSessionMessages(targetSessionId, {
-        animateAssistantRequestId: data.request_id,
-        applyIfActiveOnly: true,
+            streamedReply += deltaText;
+            ensureAssistantMessage(streamedReply);
+            setMessages((prev) => prev.map((message) => (
+              message.id === assistantMessageId
+                ? {
+                    ...message,
+                    content: streamedReply,
+                    requestId: data?.request_id || message.requestId,
+                  }
+                : message
+            )));
+            return;
+          }
+
+          if (event === "final") {
+            const finalReply = typeof data?.reply === "string" ? data.reply : streamedReply;
+            syncResolvedRequestId(data?.request_id);
+            ensureAssistantMessage(finalReply);
+            setMessages((prev) => prev.map((message) => (
+              message.id === assistantMessageId
+                ? {
+                    ...message,
+                    content: finalReply,
+                    requestId: data?.request_id || message.requestId,
+                    sources: Array.isArray(data?.sources) ? data.sources : [],
+                    retrieval: data?.retrieval || null,
+                    assistantMeta: normalizeAssistantMeta(data?.assistant_meta) || placeholderAssistantMeta,
+                    usage: data?.usage || message.usage,
+                    animate: false,
+                  }
+                : message
+            )));
+            setIsChatLoading(false);
+          }
+        },
       });
       await Promise.all([refreshUsage(), loadSessions({ animateGeneratedTitles: true })]);
     } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+
       if (isUnauthorizedError(error)) {
         resetAuthState("Phien dang nhap da het han. Vui long dang nhap lai.");
         return;
@@ -987,6 +1138,40 @@ export default function App() {
       }
     } finally {
       setIsChatLoading(false);
+      setIsChatStreaming(false);
+      if (activeChatAbortRef.current?.signal?.aborted || streamingSessionIdRef.current === targetSessionId) {
+        activeChatAbortRef.current = null;
+        streamingSessionIdRef.current = null;
+      }
+    }
+  };
+
+  const handleLoadOlderMessages = async () => {
+    if (
+      !authUser?.username ||
+      !activeSessionId ||
+      isChatStreaming ||
+      isLoadingOlderMessages ||
+      !messagePagination.hasMore ||
+      !messagePagination.nextBeforeId
+    ) {
+      return;
+    }
+
+    setIsLoadingOlderMessages(true);
+    try {
+      await loadSessionMessages(activeSessionId, {
+        beforeId: messagePagination.nextBeforeId,
+        limit: messagePagination.limit || SESSION_MESSAGES_PAGE_SIZE,
+        mode: "prepend",
+        applyIfActiveOnly: true,
+      });
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        resetAuthState("Phien dang nhap da het han. Vui long dang nhap lai.");
+      }
+    } finally {
+      setIsLoadingOlderMessages(false);
     }
   };
 
@@ -1253,14 +1438,16 @@ export default function App() {
   let screenKey = "login";
   let screenClassName = "screenTransitionLayer";
   let screenContent = (
-    <Login
-      onLogin={handleLogin}
-      onRegister={handleRegister}
-      onResetPassword={handleResetPassword}
-      isLoading={isAuthLoading || isBootstrapping}
-      isBootstrapping={isBootstrapping}
-      error={loginError}
-    />
+    <Suspense fallback={<LazyViewFallback message="Đang tải màn hình đăng nhập..." />}>
+      <Login
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        onResetPassword={handleResetPassword}
+        isLoading={isAuthLoading || isBootstrapping}
+        isBootstrapping={isBootstrapping}
+        error={loginError}
+      />
+    </Suspense>
   );
 
   if (authUser && isEnteringWorkspace) {
@@ -1286,65 +1473,74 @@ export default function App() {
     if (activeView === VIEW_KNOWLEDGE) {
       mainContent = (
         <div className="workspaceView">
-          <KnowledgePanel
-            documents={knowledgeDocuments}
-            selectedDocumentId={selectedKnowledgeDocumentId}
-            chunks={knowledgeChunks}
-            jobs={knowledgeJobs}
-            searchState={knowledgeSearch}
-            isLoading={isKnowledgeLoading}
-            sessions={sessions}
-            activeSessionId={activeSessionId}
-            onSelectDocument={handleSelectKnowledgeDocument}
-            onRefreshDocuments={handleRefreshKnowledgeDocuments}
-            onUploadFile={handleUploadKnowledgeFile}
-            onIngestText={handleIngestKnowledgeText}
-            onSearchKnowledge={handleSearchKnowledge}
-            onReindexDocument={handleReindexKnowledgeDocument}
-            onDeleteDocument={handleDeleteKnowledgeDocument}
-          />
+          <Suspense fallback={<LazyViewFallback message="Đang tải kho tri thức..." />}>
+            <KnowledgePanel
+              documents={knowledgeDocuments}
+              selectedDocumentId={selectedKnowledgeDocumentId}
+              chunks={knowledgeChunks}
+              jobs={knowledgeJobs}
+              searchState={knowledgeSearch}
+              isLoading={isKnowledgeLoading}
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelectDocument={handleSelectKnowledgeDocument}
+              onRefreshDocuments={handleRefreshKnowledgeDocuments}
+              onUploadFile={handleUploadKnowledgeFile}
+              onIngestText={handleIngestKnowledgeText}
+              onSearchKnowledge={handleSearchKnowledge}
+              onReindexDocument={handleReindexKnowledgeDocument}
+              onDeleteDocument={handleDeleteKnowledgeDocument}
+            />
+          </Suspense>
         </div>
       );
     } else if (activeView === VIEW_ADMIN && authUser.role === "admin") {
       mainContent = (
         <div className="workspaceView">
-          <AdminPanel
-            users={adminUsers}
-            analytics={adminAnalytics}
-            auditLogs={adminAuditLogs}
-            costMetrics={adminCostMetrics}
-            currentUsername={authUser.username}
-            isLoading={isAdminLoading}
-            onRefreshUsers={handleRefreshAdminUsers}
-            onSetUserRole={handleSetAdminUserRole}
-            onGenerateResetToken={handleGenerateResetToken}
-            onLoadAuditLogs={handleLoadAuditLogs}
-            onLoadCostMetrics={handleLoadCostMetrics}
-          />
+          <Suspense fallback={<LazyViewFallback message="Đang tải bảng quản trị..." />}>
+            <AdminPanel
+              users={adminUsers}
+              analytics={adminAnalytics}
+              auditLogs={adminAuditLogs}
+              costMetrics={adminCostMetrics}
+              currentUsername={authUser.username}
+              isLoading={isAdminLoading}
+              onRefreshUsers={handleRefreshAdminUsers}
+              onSetUserRole={handleSetAdminUserRole}
+              onGenerateResetToken={handleGenerateResetToken}
+              onLoadAuditLogs={handleLoadAuditLogs}
+              onLoadCostMetrics={handleLoadCostMetrics}
+            />
+          </Suspense>
         </div>
       );
     } else {
       mainContent = (
         <div className="chatView">
-          <ChatWindow
-            messages={messages}
-            isLoading={isChatLoading}
-            scopedDocuments={visibleScopedDocuments}
-            sessionTitle={activeSession?.title || ""}
-          />
-          <ChatInput
-            disabled={!authUser?.username || isChatLoading}
-            onSendMessage={handleSendMessage}
-            onUploadKnowledgeFile={(file) => handleUploadKnowledgeFile(file, activeSessionId)}
-            onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
-            isKnowledgeLoading={isKnowledgeLoading}
-            sessionDocuments={currentSessionDocuments}
-            selectedModel={selectedChatModel}
-            availableModels={SUPPORTED_CHAT_MODELS}
-            onModelChange={setSelectedChatModel}
-            thinkingEffortByModel={thinkingEffortByModel}
-            onThinkingEffortChange={handleThinkingEffortChange}
-          />
+          <Suspense fallback={<LazyViewFallback message="Đang tải giao diện chat..." />}>
+            <ChatWindow
+              messages={messages}
+              isLoading={isChatLoading}
+              scopedDocuments={visibleScopedDocuments}
+              sessionTitle={activeSession?.title || ""}
+              hasMoreHistory={messagePagination.hasMore}
+              isLoadingOlder={isLoadingOlderMessages}
+              onLoadOlder={handleLoadOlderMessages}
+            />
+            <ChatInput
+              disabled={!authUser?.username || isChatLoading || isChatStreaming}
+              onSendMessage={handleSendMessage}
+              onUploadKnowledgeFile={(file) => handleUploadKnowledgeFile(file, activeSessionId)}
+              onIngestKnowledgeText={(payload) => handleIngestKnowledgeText(payload, activeSessionId)}
+              isKnowledgeLoading={isKnowledgeLoading}
+              sessionDocuments={currentSessionDocuments}
+              selectedModel={selectedChatModel}
+              availableModels={SUPPORTED_CHAT_MODELS}
+              onModelChange={setSelectedChatModel}
+              thinkingEffortByModel={thinkingEffortByModel}
+              onThinkingEffortChange={handleThinkingEffortChange}
+            />
+          </Suspense>
         </div>
       );
     }
@@ -1378,7 +1574,7 @@ export default function App() {
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div
+      <Motion.div
         key={screenKey}
         className={screenClassName}
         initial={screenStageVariants.initial}
@@ -1387,7 +1583,7 @@ export default function App() {
         transition={SCREEN_STAGE_TRANSITION}
       >
         {screenContent}
-      </motion.div>
+      </Motion.div>
     </AnimatePresence>
   );
 }

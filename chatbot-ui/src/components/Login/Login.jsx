@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import styles from "./Login.module.css";
 
@@ -135,7 +135,6 @@ const SHOWCASE_CONTENT_BY_MODE = {
 
 function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs = 14 } = {}) {
   const [text, setText] = useState(() => (enabled ? "" : targetText));
-  const [isAnimating, setIsAnimating] = useState(() => enabled && Boolean(targetText));
   const currentTextRef = useRef(enabled ? "" : targetText);
   const timeoutRef = useRef(null);
 
@@ -146,19 +145,19 @@ function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs 
   useEffect(() => {
     if (!enabled) {
       window.clearTimeout(timeoutRef.current);
-      setText(targetText);
-      setIsAnimating(false);
-      return undefined;
+      timeoutRef.current = window.setTimeout(() => {
+        currentTextRef.current = targetText;
+        setText(targetText);
+      }, 0);
+      return () => window.clearTimeout(timeoutRef.current);
     }
 
     const currentText = currentTextRef.current;
     if (currentText === targetText) {
-      setIsAnimating(false);
       return undefined;
     }
 
     let cancelled = false;
-    setIsAnimating(true);
 
     const schedule = (callback, delay) => {
       timeoutRef.current = window.setTimeout(callback, delay);
@@ -169,9 +168,10 @@ function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs 
     const typeStep = (index) => {
       if (cancelled) return;
 
-      setText(targetText.slice(0, index));
+      const nextText = targetText.slice(0, index);
+      currentTextRef.current = nextText;
+      setText(nextText);
       if (index >= targetText.length) {
-        setIsAnimating(false);
         return;
       }
 
@@ -187,7 +187,9 @@ function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs 
       }
 
       deleteIndex -= 1;
-      setText(currentText.slice(0, deleteIndex));
+      const nextText = currentText.slice(0, deleteIndex);
+      currentTextRef.current = nextText;
+      setText(nextText);
       schedule(deleteStep, deleteMs);
     };
 
@@ -199,7 +201,10 @@ function useTypewriterText(targetText, { enabled = true, enterMs = 20, deleteMs 
     };
   }, [deleteMs, enabled, enterMs, targetText]);
 
-  return { text, isAnimating };
+  return {
+    text: enabled ? text : targetText,
+    isAnimating: enabled && text !== targetText,
+  };
 }
 
 const EyeIcon = ({ visible }) => (
@@ -337,14 +342,14 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
     <div className={styles.page}>
       <div className={styles.orbA} />
       <div className={styles.orbB} />
-      <motion.div
+      <Motion.div
         className={styles.shell}
         layout
         transition={LAYOUT_SPRING}
         initial={PANEL_ENTER_MOTION.initial}
         animate={PANEL_ENTER_MOTION.animate}
       >
-        <motion.section className={styles.showcase} layout transition={LAYOUT_SPRING}>
+        <Motion.section className={styles.showcase} layout transition={LAYOUT_SPRING}>
           <div className={styles.brandRow}>
             <span className={styles.brandMark}>D</span>
             <div className={styles.brandCopy}>
@@ -360,7 +365,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
           </div>
 
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
+            <Motion.div
               key={`showcase-${showcaseModeKey}`}
               className={styles.showcaseModeLayer}
               initial={SHOWCASE_MODE_MOTION.initial}
@@ -368,7 +373,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
               exit={SHOWCASE_MODE_MOTION.exit}
               transition={SHOWCASE_MODE_MOTION.transition}
             >
-              <motion.div className={styles.showcaseIntro} layout transition={LAYOUT_SPRING}>
+              <Motion.div className={styles.showcaseIntro} layout transition={LAYOUT_SPRING}>
                 <p className={styles.heroText}>{showcaseContent.text}</p>
 
                 <div className={styles.featureRow}>
@@ -376,9 +381,9 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                     <span key={pill} className={styles.featurePill}>{pill}</span>
                   ))}
                 </div>
-              </motion.div>
+              </Motion.div>
 
-              <motion.div className={styles.previewCard} layout transition={LAYOUT_SPRING}>
+              <Motion.div className={styles.previewCard} layout transition={LAYOUT_SPRING}>
                 <div className={styles.previewHeader}>
                   <span className={styles.previewDot} />
                   <span className={styles.previewDot} />
@@ -400,14 +405,14 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                     />
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
+              </Motion.div>
+            </Motion.div>
           </AnimatePresence>
-        </motion.section>
+        </Motion.section>
 
-        <motion.form className={styles.card} onSubmit={handleSubmit} layout transition={LAYOUT_SPRING}>
+        <Motion.form className={styles.card} onSubmit={handleSubmit} layout transition={LAYOUT_SPRING}>
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
+            <Motion.div
               key={`header-${authSurfaceKey}`}
               className={styles.formHeader}
               initial={HEADER_PANEL_MOTION.initial}
@@ -433,7 +438,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 </div>
               </div>
               {isForgotMode ? (
-                <motion.p
+                <Motion.p
                   className={styles.subtitle}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -441,7 +446,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                 >
                   Đặt lại mật khẩu bằng reset token do admin cấp
-                </motion.p>
+                </Motion.p>
               ) : (
                 <p className={styles.subtitle}>
                   {mode === "login"
@@ -449,12 +454,12 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                     : "Tạo tài khoản mới cho workspace"}
                 </p>
               )}
-            </motion.div>
+            </Motion.div>
           </AnimatePresence>
 
           <AnimatePresence mode="wait" initial={false}>
             {!isForgotMode ? (
-              <motion.div
+              <Motion.div
                 key="auth-modes"
                 className={styles.modeSwitch}
                 initial={MODE_SWITCH_MOTION.initial}
@@ -469,7 +474,7 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   disabled={isLoading}
                   data-testid="login-mode-button"
                 >
-                  {mode === "login" ? <motion.span layoutId="auth-mode-highlight" className={styles.modeBtnGlow} transition={{ type: "spring", stiffness: 360, damping: 30 }} /> : null}
+                  {mode === "login" ? <Motion.span layoutId="auth-mode-highlight" className={styles.modeBtnGlow} transition={{ type: "spring", stiffness: 360, damping: 30 }} /> : null}
                   <span className={styles.modeBtnText}>Đăng nhập</span>
                 </button>
                 <button
@@ -479,12 +484,12 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                   disabled={isLoading}
                   data-testid="register-mode-button"
                 >
-                  {mode === "register" ? <motion.span layoutId="auth-mode-highlight" className={styles.modeBtnGlow} transition={{ type: "spring", stiffness: 360, damping: 30 }} /> : null}
+                  {mode === "register" ? <Motion.span layoutId="auth-mode-highlight" className={styles.modeBtnGlow} transition={{ type: "spring", stiffness: 360, damping: 30 }} /> : null}
                   <span className={styles.modeBtnText}>Đăng ký</span>
                 </button>
-              </motion.div>
+              </Motion.div>
             ) : (
-              <motion.div
+              <Motion.div
                 key="forgot-state"
                 className={styles.modeStatePill}
                 initial={MODE_SWITCH_MOTION.initial}
@@ -493,12 +498,12 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                 transition={MODE_SWITCH_MOTION.transition}
               >
                 Reset access
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
 
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
+            <Motion.div
               key={authSurfaceKey}
               className={styles.formBody}
               variants={FORM_PANEL_VARIANTS}
@@ -508,8 +513,8 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
               layout
               transition={LAYOUT_SPRING}
             >
-              <motion.div className={styles.fields} variants={FORM_SECTION_VARIANTS}>
-                <motion.label className={styles.field} htmlFor="username" variants={FORM_ITEM_VARIANTS}>
+              <Motion.div className={styles.fields} variants={FORM_SECTION_VARIANTS}>
+                <Motion.label className={styles.field} htmlFor="username" variants={FORM_ITEM_VARIANTS}>
                   <span className={styles.label}>Username</span>
                   <input
                     id="username"
@@ -530,11 +535,11 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                     disabled={isLoading}
                     data-testid="username-input"
                   />
-                </motion.label>
+                </Motion.label>
 
                 <AnimatePresence initial={false}>
                   {isForgotMode ? (
-                    <motion.label
+                    <Motion.label
                       className={styles.field}
                       htmlFor="resetToken"
                       variants={FORM_ITEM_VARIANTS}
@@ -559,11 +564,11 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                         disabled={isLoading}
                         data-testid="reset-token-input"
                       />
-                    </motion.label>
+                    </Motion.label>
                   ) : null}
                 </AnimatePresence>
 
-                <motion.label className={styles.field} htmlFor="password" variants={FORM_ITEM_VARIANTS}>
+                <Motion.label className={styles.field} htmlFor="password" variants={FORM_ITEM_VARIANTS}>
                   <span className={styles.label}>{isForgotMode ? "Mật khẩu mới" : "Password"}</span>
                   <div className={styles.inputWrap}>
                     <input
@@ -599,18 +604,18 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                       <EyeIcon visible={showPassword} />
                     </button>
                   </div>
-                </motion.label>
+                </Motion.label>
 
                 <AnimatePresence initial={false}>
                   {isRegisterMode || isForgotMode ? (
-                    <motion.div
+                    <Motion.div
                       className={styles.confirmFieldPresence}
                       initial={{ height: 0, opacity: 0, y: 8 }}
                       animate={{ height: "auto", opacity: 1, y: 0 }}
                       exit={{ height: 0, opacity: 0, y: -6 }}
                       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                     >
-                      <motion.label
+                      <Motion.label
                         className={styles.field}
                         htmlFor="confirmPassword"
                         variants={CONFIRM_FIELD_VARIANTS}
@@ -653,14 +658,14 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                             <EyeIcon visible={showConfirmPassword} />
                           </button>
                         </div>
-                      </motion.label>
-                    </motion.div>
+                      </Motion.label>
+                    </Motion.div>
                   ) : null}
                 </AnimatePresence>
 
                 <AnimatePresence initial={false}>
                   {mode === "login" ? (
-                    <motion.div
+                    <Motion.div
                       className={styles.inlineActionRow}
                       variants={FORM_ITEM_VARIANTS}
                       initial="hidden"
@@ -677,17 +682,17 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                       >
                         Quên mật khẩu?
                       </button>
-                    </motion.div>
+                    </Motion.div>
                   ) : null}
                 </AnimatePresence>
-              </motion.div>
+              </Motion.div>
 
-              <motion.div className={styles.messageStack} variants={FORM_ITEM_VARIANTS}>
+              <Motion.div className={styles.messageStack} variants={FORM_ITEM_VARIANTS}>
                 {serverMessage ? <div className={styles.success}>{serverMessage}</div> : null}
                 {displayError ? <div className={styles.error}>{displayError}</div> : null}
-              </motion.div>
+              </Motion.div>
 
-              <motion.button className={styles.button} type="submit" disabled={isLoading} data-testid="auth-submit-button" variants={FORM_ITEM_VARIANTS}>
+              <Motion.button className={styles.button} type="submit" disabled={isLoading} data-testid="auth-submit-button" variants={FORM_ITEM_VARIANTS}>
                 {isLoading
                   ? isBootstrapping
                     ? "Đang khôi phục phiên..."
@@ -701,15 +706,15 @@ export default function Login({ onLogin, onRegister, onResetPassword, isLoading,
                     : mode === "register"
                       ? "Đăng ký"
                       : "Xác nhận reset"}
-                </motion.button>
+                </Motion.button>
 
-                <motion.p className={styles.hint} variants={FORM_ITEM_VARIANTS}>
+                <Motion.p className={styles.hint} variants={FORM_ITEM_VARIANTS}>
                 Phiên đăng nhập được lưu trên trình duyệt cho đến khi bạn đăng xuất hoặc token hết hạn.
-                </motion.p>
-            </motion.div>
+                </Motion.p>
+            </Motion.div>
           </AnimatePresence>
-          </motion.form>
-        </motion.div>
+          </Motion.form>
+        </Motion.div>
     </div>
   );
 }

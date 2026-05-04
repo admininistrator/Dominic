@@ -1,7 +1,9 @@
 import { fulfillJson } from "./http";
 
 export async function handleAuthRoute({ route, request, path, method, state }) {
-  if (path === "/api/auth/login" && method === "POST") {
+  const normalizedPath = path.replace(/^\/api\/v1(?=\/)/, "/api");
+
+  if (normalizedPath === "/api/auth/login" && method === "POST") {
     const payload = request.postDataJSON();
     state.user.username = payload.username;
     state.usage.username = payload.username;
@@ -9,7 +11,7 @@ export async function handleAuthRoute({ route, request, path, method, state }) {
     return true;
   }
 
-  if (path === "/api/auth/register" && method === "POST") {
+  if (normalizedPath === "/api/auth/register" && method === "POST") {
     const payload = request.postDataJSON();
     state.user.username = payload.username;
     state.usage.username = payload.username;
@@ -17,12 +19,12 @@ export async function handleAuthRoute({ route, request, path, method, state }) {
     return true;
   }
 
-  if (path === "/api/auth/me" && method === "GET") {
+  if (normalizedPath === "/api/auth/me" && method === "GET") {
     await fulfillJson(route, state.user);
     return true;
   }
 
-  if (path === "/api/auth/reset-password" && method === "POST") {
+  if (normalizedPath === "/api/auth/reset-password" && method === "POST") {
     const payload = request.postDataJSON();
     state.resetCalls.push(payload);
     await fulfillJson(route, {

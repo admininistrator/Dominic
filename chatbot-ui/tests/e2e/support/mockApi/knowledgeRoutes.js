@@ -21,12 +21,14 @@ function extractUploadMetadata(request) {
 }
 
 export async function handleKnowledgeRoute({ route, request, url, path, method, state }) {
-  if (path === "/api/knowledge/documents" && method === "GET") {
+  const normalizedPath = path.replace(/^\/api\/v1(?=\/)/, "/api");
+
+  if (normalizedPath === "/api/knowledge/documents" && method === "GET") {
     await fulfillJson(route, state.documents);
     return true;
   }
 
-  if (path === "/api/knowledge/documents/upload" && method === "POST") {
+  if (normalizedPath === "/api/knowledge/documents/upload" && method === "POST") {
     if (state.uploadFailure) {
       await fulfillError(route, state.uploadFailure.status || 422, state.uploadFailure.detail || "Upload tài liệu thất bại.");
       return true;
@@ -52,7 +54,7 @@ export async function handleKnowledgeRoute({ route, request, url, path, method, 
     return true;
   }
 
-  if (path === "/api/knowledge/documents/ingest" && method === "POST") {
+  if (normalizedPath === "/api/knowledge/documents/ingest" && method === "POST") {
     if (state.ingestFailure) {
       await fulfillError(route, state.ingestFailure.status || 422, state.ingestFailure.detail || "Ingest text thất bại.");
       return true;
@@ -80,21 +82,21 @@ export async function handleKnowledgeRoute({ route, request, url, path, method, 
     return true;
   }
 
-  const chunksMatch = path.match(/^\/api\/knowledge\/documents\/(\d+)\/chunks$/);
+  const chunksMatch = normalizedPath.match(/^\/api\/knowledge\/documents\/(\d+)\/chunks$/);
   if (chunksMatch && method === "GET") {
     const documentId = Number(chunksMatch[1]);
     await fulfillJson(route, state.chunksByDocument[documentId] || []);
     return true;
   }
 
-  const jobsMatch = path.match(/^\/api\/knowledge\/documents\/(\d+)\/jobs$/);
+  const jobsMatch = normalizedPath.match(/^\/api\/knowledge\/documents\/(\d+)\/jobs$/);
   if (jobsMatch && method === "GET") {
     const documentId = Number(jobsMatch[1]);
     await fulfillJson(route, state.jobsByDocument[documentId] || []);
     return true;
   }
 
-  const reindexMatch = path.match(/^\/api\/knowledge\/documents\/(\d+)\/reindex$/);
+  const reindexMatch = normalizedPath.match(/^\/api\/knowledge\/documents\/(\d+)\/reindex$/);
   if (reindexMatch && method === "POST") {
     if (state.reindexFailure) {
       await fulfillError(route, state.reindexFailure.status || 422, state.reindexFailure.detail || "Reindex tài liệu thất bại.");
@@ -119,7 +121,7 @@ export async function handleKnowledgeRoute({ route, request, url, path, method, 
     return true;
   }
 
-  const deleteDocMatch = path.match(/^\/api\/knowledge\/documents\/(\d+)$/);
+  const deleteDocMatch = normalizedPath.match(/^\/api\/knowledge\/documents\/(\d+)$/);
   if (deleteDocMatch && method === "DELETE") {
     if (state.deleteFailure) {
       await fulfillError(route, state.deleteFailure.status || 422, state.deleteFailure.detail || "Xóa tài liệu thất bại.");
@@ -134,7 +136,7 @@ export async function handleKnowledgeRoute({ route, request, url, path, method, 
     return true;
   }
 
-  if (path === "/api/knowledge/search" && method === "POST") {
+  if (normalizedPath === "/api/knowledge/search" && method === "POST") {
     if (state.searchFailure) {
       await fulfillError(route, state.searchFailure.status || 422, state.searchFailure.detail || "Search knowledge thất bại.");
       return true;

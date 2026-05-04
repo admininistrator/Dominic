@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient, { API_PREFIX } from "./apiClient";
 
 export async function uploadKnowledgeFile(file, { asyncIndex = false, sessionId = null } = {}) {
   const formData = new FormData();
@@ -8,7 +8,7 @@ export async function uploadKnowledgeFile(file, { asyncIndex = false, sessionId 
   if (asyncIndex) params.async_index = true;
   if (sessionId) params.session_id = sessionId;
 
-  const response = await apiClient.post("/api/knowledge/documents/upload", formData, {
+  const response = await apiClient.post(`${API_PREFIX}/knowledge/documents/upload`, formData, {
     params,
   });
   return response.data;
@@ -25,7 +25,7 @@ export async function ingestKnowledgeText({
   session_id,
 }) {
   const response = await apiClient.post(
-    "/api/knowledge/documents/ingest",
+    `${API_PREFIX}/knowledge/documents/ingest`,
     { title, raw_text, source_type, source_uri, mime_type, metadata, session_id },
     { params: asyncIndex ? { async_index: true } : {} },
   );
@@ -50,27 +50,27 @@ export async function listKnowledgeDocuments({ skip = 0, limit = 50, sessionId =
   if (sessionId) params.session_id = sessionId;
   if (sessionFilter !== "all") params.session_filter = sessionFilter;
 
-  const response = await apiClient.get("/api/knowledge/documents", { params });
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/documents`, { params });
   return response.data;
 }
 
 export async function getKnowledgeDocument(docId) {
-  const response = await apiClient.get(`/api/knowledge/documents/${docId}`);
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/documents/${docId}`);
   return response.data;
 }
 
 export async function getKnowledgeChunks(docId) {
-  const response = await apiClient.get(`/api/knowledge/documents/${docId}/chunks`);
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/documents/${docId}/chunks`);
   return response.data;
 }
 
 export async function getKnowledgeJobs(docId) {
-  const response = await apiClient.get(`/api/knowledge/documents/${docId}/jobs`);
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/documents/${docId}/jobs`);
   return response.data;
 }
 
 export async function searchKnowledge({ query, top_k, document_id }) {
-  const response = await apiClient.post("/api/knowledge/search", {
+  const response = await apiClient.post(`${API_PREFIX}/knowledge/search`, {
     query,
     top_k,
     document_id,
@@ -79,7 +79,7 @@ export async function searchKnowledge({ query, top_k, document_id }) {
 }
 
 export async function getKnowledgeAnalytics({ username, recent_limit = 20 } = {}) {
-  const response = await apiClient.get("/api/knowledge/admin/analytics", {
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/admin/analytics`, {
     params: {
       username,
       recent_limit,
@@ -89,17 +89,17 @@ export async function getKnowledgeAnalytics({ username, recent_limit = 20 } = {}
 }
 
 export async function reindexKnowledgeDocument(docId) {
-  const response = await apiClient.post(`/api/knowledge/documents/${docId}/reindex`);
+  const response = await apiClient.post(`${API_PREFIX}/knowledge/documents/${docId}/reindex`);
   return response.data;
 }
 
 export async function deleteKnowledgeDocument(docId) {
-  const response = await apiClient.delete(`/api/knowledge/documents/${docId}`);
+  const response = await apiClient.delete(`${API_PREFIX}/knowledge/documents/${docId}`);
   return response.data;
 }
 
 export async function getKnowledgeJob(jobId) {
-  const response = await apiClient.get(`/api/knowledge/jobs/${jobId}`);
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/jobs/${jobId}`);
   return response.data;
 }
 
@@ -111,14 +111,14 @@ export async function getAuditLogs({
   skip = 0,
   limit = 100,
 } = {}) {
-  const response = await apiClient.get("/api/knowledge/admin/audit-logs", {
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/admin/audit-logs`, {
     params: { actor_username, action, resource_type, resource_id, skip, limit },
   });
   return response.data;
 }
 
 export async function getCostMetrics({ username } = {}) {
-  const response = await apiClient.get("/api/knowledge/admin/cost", {
+  const response = await apiClient.get(`${API_PREFIX}/knowledge/admin/cost`, {
     params: username ? { username } : {},
   });
   return response.data;

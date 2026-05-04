@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { USER_AVATAR_ICON } from "../../assets/icons";
 import styles from "./Sidebar.module.css";
@@ -119,7 +119,6 @@ export default function Sidebar({
   const username = user?.username || "";
   const role = user?.role || "user";
   const accountMenuMounted = accountMenuState !== "closed";
-  const accountMenuOpen = accountMenuState === "open";
   const accountMenuExpanded = accountMenuState === "open" || accountMenuState === "opening";
   const isSettingsTabActive = activeAccountTab === "settings";
   const safeSessions = Array.isArray(sessions) ? sessions : [];
@@ -391,7 +390,7 @@ export default function Sidebar({
 
           <AnimatePresence>
             {accountMenuMounted && (
-              <motion.div
+              <Motion.div
                 id="sidebar-account-menu"
                 ref={accountMenuRef}
                 className={styles.accountMenu}
@@ -420,7 +419,7 @@ export default function Sidebar({
 
               <AnimatePresence initial={false} mode="wait">
                 {isSettingsTabActive ? (
-                  <motion.div
+                  <Motion.div
                     key="settings-pane"
                     className={styles.accountTabPane}
                     variants={ACCOUNT_SECTION_VARIANTS}
@@ -474,7 +473,7 @@ export default function Sidebar({
                     </button>
                     <AnimatePresence initial={false}>
                       {passwordSectionOpen ? (
-                        <motion.div
+                        <Motion.div
                           key="password-panel"
                           className={styles.passwordSectionPanel}
                           variants={ACCOUNT_SECTION_VARIANTS}
@@ -498,7 +497,7 @@ export default function Sidebar({
                               </div>
                             )}
                           </div>
-                        </motion.div>
+                        </Motion.div>
                       ) : null}
                     </AnimatePresence>
                   </div>
@@ -517,7 +516,7 @@ export default function Sidebar({
                     </button>
                     <AnimatePresence initial={false}>
                       {logoutConfirmOpen ? (
-                        <motion.div
+                        <Motion.div
                           key="logout-panel"
                           className={styles.logoutConfirmPanel}
                           variants={ACCOUNT_SECTION_VARIANTS}
@@ -534,15 +533,15 @@ export default function Sidebar({
                               </button>
                             </div>
                           </div>
-                        </motion.div>
+                        </Motion.div>
                       ) : null}
                     </AnimatePresence>
                   </div>
                 </div>
-                  </motion.div>
+                  </Motion.div>
                 ) : null}
               </AnimatePresence>
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
         </div>

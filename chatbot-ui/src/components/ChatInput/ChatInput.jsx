@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getModelPickerIcon } from "../../assets/icons";
 import {
@@ -178,12 +178,12 @@ export default function ChatInput({
     setModelMenuOpen(false);
   }, []);
 
-  const openThinkingMenu = useCallback(() => {
+  const openThinkingMenu = () => {
     if (!thinkingEffortSupported) return;
     closeImportPanel();
     setModelMenuOpen(false);
     setThinkingMenuOpen(true);
-  }, [closeImportPanel, thinkingEffortSupported]);
+  };
 
   const closeThinkingMenu = useCallback(() => {
     setThinkingMenuOpen(false);
@@ -535,7 +535,7 @@ export default function ChatInput({
                 </span>
               </button>
               <div className={styles.modelArea} ref={modelMenuRef}>
-                <motion.button
+                <Motion.button
                   type="button"
                   className={`${styles.modelPicker} ${modelMenuOpen ? styles.modelPickerOpen : ""}`}
                   title={`Model hiện tại: ${activeModelLabel || ""}`}
@@ -556,12 +556,12 @@ export default function ChatInput({
                   <span className={`${styles.modelPickerChevron} ${modelMenuOpen ? styles.modelPickerChevronOpen : ""}`}>
                     <IconChevronDown />
                   </span>
-                </motion.button>
+                </Motion.button>
 
                 <AnimatePresence initial={false}>
                   {modelMenuOpen ? (
                     <div className={styles.modelPopupShell} data-testid="chat-model-menu">
-                      <motion.div
+                      <Motion.div
                         key="chat-model-menu"
                         className={styles.modelPopup}
                         variants={POPUP_MOTION_VARIANTS}
@@ -615,14 +615,14 @@ export default function ChatInput({
                             </section>
                           ))}
                         </div>
-                      </motion.div>
+                      </Motion.div>
                     </div>
                   ) : null}
                 </AnimatePresence>
               </div>
               {thinkingEffortSupported && (
                 <div className={styles.thinkingArea} ref={thinkingMenuRef}>
-                  <motion.button
+                  <Motion.button
                     type="button"
                     className={`${styles.thinkingPicker} ${thinkingMenuOpen ? styles.thinkingPickerOpen : ""}`}
                     onClick={toggleThinkingMenu}
@@ -640,12 +640,12 @@ export default function ChatInput({
                     <span className={`${styles.thinkingPickerChevron} ${thinkingMenuOpen ? styles.thinkingPickerChevronOpen : ""}`}>
                       <IconChevronDown />
                     </span>
-                  </motion.button>
+                  </Motion.button>
 
                   <AnimatePresence initial={false}>
                     {thinkingMenuOpen ? (
                       <div className={styles.thinkingPopupShell} data-testid="chat-thinking-effort-menu">
-                        <motion.div
+                        <Motion.div
                           key="chat-thinking-effort-menu"
                           className={styles.thinkingPopup}
                           variants={POPUP_MOTION_VARIANTS}
@@ -679,7 +679,7 @@ export default function ChatInput({
                               );
                             })}
                           </div>
-                        </motion.div>
+                        </Motion.div>
                       </div>
                     ) : null}
                   </AnimatePresence>

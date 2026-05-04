@@ -49,27 +49,90 @@ function ThinkingBubble() {
   );
 }
 
-export default function ChatWindow({ messages, isLoading, scopedDocuments = [], sessionTitle = "" }) {
+export default function ChatWindow({
+  messages,
+  isLoading,
+  scopedDocuments = [],
+  sessionTitle = "",
+  hasMoreHistory = false,
+  isLoadingOlder = false,
+  onLoadOlder = null,
+}) {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
+  const pendingPrependScrollRef = useRef(null);
+  const previousLoadingOlderRef = useRef(false);
+  const previousRenderRef = useRef({
+    messageCount: 0,
+    lastMessageSignature: "",
+  });
   const visibleScopedDocuments = useMemo(
     () => (Array.isArray(scopedDocuments) ? scopedDocuments.filter(Boolean) : []),
     [scopedDocuments]
   );
   const normalizedSessionTitle = typeof sessionTitle === "string" ? sessionTitle.trim() : "";
+  const lastMessage = messages[messages.length - 1] || null;
+  const lastMessageSignature = `${lastMessage?.id || "none"}:${lastMessage?.content?.length || 0}`;
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    const nextSnapshot = {
+      messageCount: messages.length,
+      lastMessageSignature,
+    };
+
+    if (pendingPrependScrollRef.current) {
+      const { scrollHeight, scrollTop } = pendingPrependScrollRef.current;
+      const heightDelta = container.scrollHeight - scrollHeight;
+      container.scrollTop = scrollTop + heightDelta;
+      pendingPrependScrollRef.current = null;
+      previousRenderRef.current = nextSnapshot;
+      return;
+    }
 
     const scrollToLatest = () => {
       container.scrollTop = container.scrollHeight;
       bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
     };
 
+    const shouldScrollToLatest =
+      isLoading ||
+      previousRenderRef.current.messageCount === 0 ||
+      messages.length > previousRenderRef.current.messageCount ||
+      lastMessageSignature !== previousRenderRef.current.lastMessageSignature;
+
+    previousRenderRef.current = nextSnapshot;
+
+    if (!shouldScrollToLatest) {
+      return;
+    }
+
     const rafId = window.requestAnimationFrame(scrollToLatest);
     return () => window.cancelAnimationFrame(rafId);
-  }, [messages.length, isLoading]);
+  }, [messages.length, lastMessageSignature, isLoading]);
+
+  useEffect(() => {
+    if (previousLoadingOlderRef.current && !isLoadingOlder) {
+      pendingPrependScrollRef.current = null;
+    }
+    previousLoadingOlderRef.current = isLoadingOlder;
+  }, [isLoadingOlder]);
+
+  const handleLoadOlderClick = () => {
+    if (typeof onLoadOlder !== "function" || isLoadingOlder) return;
+
+    const container = containerRef.current;
+    if (container) {
+      pendingPrependScrollRef.current = {
+        scrollHeight: container.scrollHeight,
+        scrollTop: container.scrollTop,
+      };
+    }
+
+    onLoadOlder();
+  };
 
   return (
     <section className={styles.container} ref={containerRef}>
@@ -106,6 +169,18 @@ export default function ChatWindow({ messages, isLoading, scopedDocuments = [], 
           </div>
         ) : (
           <div className={styles.list}>
+            {(hasMoreHistory || isLoadingOlder) && (
+              <div className={styles.historyActions}>
+                <button
+                  type="button"
+                  className={styles.loadOlderButton}
+                  onClick={handleLoadOlderClick}
+                  disabled={isLoadingOlder}
+                >
+                  {isLoadingOlder ? "Đang tải lịch sử cũ hơn..." : "Tải lịch sử cũ hơn"}
+                </button>
+              </div>
+            )}
             {messages.map((msg) => (
               <MessageBubble
                 key={msg.id}

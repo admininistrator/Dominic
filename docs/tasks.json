@@ -1,0 +1,336 @@
+[
+  {
+    "id": "DOC-001",
+    "title": "Document frontend to backend domain boundaries",
+    "scope": "integration",
+    "files": [
+      "docs/plan.md",
+      "README.md",
+      "chatbot-ui/README.md"
+    ],
+    "depends_on": [],
+    "acceptance_criteria": [
+      "The documented system overview identifies frontend ownership and inferred backend responsibilities",
+      "Domain boundaries for auth, chat, knowledge, and admin flows are described consistently with existing repository structure",
+      "No implementation code is introduced"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-001",
+    "title": "Validate root application state responsibilities",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/src/components/App/App.jsx",
+      "docs/plan.md"
+    ],
+    "depends_on": [
+      "DOC-001"
+    ],
+    "acceptance_criteria": [
+      "The responsibilities of the stateful app entrypoint and layout shell are clearly separated",
+      "State domains for auth, sessions, chat, knowledge, admin, and theme are identified",
+      "Planned follow-up work does not assume undocumented component ownership"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "INT-001",
+    "title": "Confirm API client configuration contract",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/src/service/apiClient.js",
+      "chatbot-ui/.env.example",
+      "docs/plan.md"
+    ],
+    "depends_on": [
+      "DOC-001"
+    ],
+    "acceptance_criteria": [
+      "Base URL resolution, timeout handling, token storage, and API prefix behavior are documented",
+      "Refresh token retry behavior is accounted for in integration planning",
+      "Environment-driven configuration is preserved without hardcoded endpoint expansion"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "BE-001",
+    "title": "Define backend auth endpoint contract",
+    "scope": "backend",
+    "files": [
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-001"
+    ],
+    "acceptance_criteria": [
+      "Required auth endpoints for register, login, logout, refresh, me, password change, and reset are enumerated",
+      "Expected token payload requirements are identified for frontend persistence",
+      "Admin auth operations are listed separately from end-user auth flows"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-002",
+    "title": "Map login and session recovery UI flow",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/Login/Login.jsx",
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/tests/e2e/auth.spec.js"
+    ],
+    "depends_on": [
+      "BE-001",
+      "FE-001"
+    ],
+    "acceptance_criteria": [
+      "Login, registration, logout, and session recovery entry points are identified",
+      "Required UI states for loading, success, and failure are captured",
+      "Existing E2E auth coverage can be traced to the documented flow"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "INT-002",
+    "title": "Define chat request and response contract",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/src/service/chatApi.js",
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-001"
+    ],
+    "acceptance_criteria": [
+      "Chat payload fields for session, message, model, reasoning effort, knowledge document, web search, and images are enumerated",
+      "Streaming and non-streaming response modes are described separately",
+      "Error and unauthorized retry paths are accounted for in the contract"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "BE-002",
+    "title": "Define chat session and message persistence requirements",
+    "scope": "backend",
+    "files": [
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-002"
+    ],
+    "acceptance_criteria": [
+      "Backend requirements for session creation, listing, deletion, and message history retrieval are documented",
+      "Pagination metadata requirements are defined for message history endpoints",
+      "Usage metrics dependencies are captured for user quota reporting"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-003",
+    "title": "Map chat composer and transcript UI responsibilities",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "chatbot-ui/src/components/ChatWindow/ChatWindow.jsx",
+      "chatbot-ui/src/components/MessageBubble/MessageBubble.jsx",
+      "chatbot-ui/src/App.jsx"
+    ],
+    "depends_on": [
+      "INT-002",
+      "FE-001"
+    ],
+    "acceptance_criteria": [
+      "Composer responsibilities for prompt entry, model selection, web search, and attachment handling are identified",
+      "Transcript responsibilities for markdown rendering, metadata display, and source expansion are identified",
+      "State handoff between root orchestration and chat components is documented"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "INT-003",
+    "title": "Define knowledge ingestion and retrieval contract",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/src/service/knowledgeApi.js",
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-001"
+    ],
+    "acceptance_criteria": [
+      "Upload, text ingest, list, chunk inspection, job inspection, search, reindex, and delete operations are enumerated",
+      "Session-scoped and global document behavior is distinguished",
+      "Async indexing and polling expectations are documented"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "BE-003",
+    "title": "Define knowledge indexing pipeline responsibilities",
+    "scope": "backend",
+    "files": [
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-003"
+    ],
+    "acceptance_criteria": [
+      "Backend responsibilities for document storage, chunking, indexing, search, and job state transitions are documented",
+      "Failure states for ingestion and reindex workflows are identified",
+      "Retrieval outputs needed by the chat experience are captured"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-004",
+    "title": "Map knowledge panel and chat import UI flows",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/KnowledgePanel/KnowledgePanel.jsx",
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/tests/e2e/knowledge.spec.js"
+    ],
+    "depends_on": [
+      "INT-003",
+      "FE-001"
+    ],
+    "acceptance_criteria": [
+      "Knowledge panel responsibilities for search, listing, inspection, reindex, and delete are identified",
+      "Chat-side knowledge import entry points are identified separately from the dedicated knowledge panel",
+      "Existing E2E knowledge scenarios can be traced to the documented workflows"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "INT-004",
+    "title": "Define administrative analytics contract",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/src/service/authApi.js",
+      "chatbot-ui/src/service/knowledgeApi.js",
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "BE-001",
+      "INT-003"
+    ],
+    "acceptance_criteria": [
+      "Admin-only endpoints for users, role changes, analytics, audit logs, and cost metrics are enumerated",
+      "Role-sensitive integration assumptions are documented",
+      "The contract distinguishes operational telemetry from end-user knowledge features"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-005",
+    "title": "Map admin panel presentation and navigation flow",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/AdminPanel/AdminPanel.jsx",
+      "chatbot-ui/src/components/Sidebar/Sidebar.jsx",
+      "chatbot-ui/src/App.jsx"
+    ],
+    "depends_on": [
+      "INT-004",
+      "FE-001"
+    ],
+    "acceptance_criteria": [
+      "Admin navigation entry points and view switching behavior are identified",
+      "User management and reporting display responsibilities are separated from service-layer concerns",
+      "Planned changes preserve the current layout shell structure"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "FE-006",
+    "title": "Validate model catalog and reasoning effort configuration",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/config/uiConfig.js",
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "chatbot-ui/tests/e2e/chat.spec.js"
+    ],
+    "depends_on": [
+      "FE-003"
+    ],
+    "acceptance_criteria": [
+      "Supported and available model definitions are documented",
+      "Thinking effort behavior is traced from configuration to UI usage",
+      "Any future model changes are recognized as requiring coordinated test updates"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "QA-001",
+    "title": "Map end-to-end coverage to functional domains",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/tests/e2e/auth.spec.js",
+      "chatbot-ui/tests/e2e/chat.spec.js",
+      "chatbot-ui/tests/e2e/knowledge.spec.js",
+      "chatbot-ui/tests/e2e/support/mockApi.js"
+    ],
+    "depends_on": [
+      "FE-002",
+      "FE-003",
+      "FE-004"
+    ],
+    "acceptance_criteria": [
+      "Auth, chat, and knowledge tests are mapped to documented features",
+      "Mock API responsibilities are identified as a browser-layer contract test harness",
+      "Known gaps between mocked coverage and real backend behavior are documented"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "OPS-001",
+    "title": "Document deployment and runtime configuration dependencies",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/Dockerfile",
+      "chatbot-ui/nginx.conf",
+      "chatbot-ui/.env.example",
+      "chatbot-ui/.env.production",
+      "docs/plan.md"
+    ],
+    "depends_on": [
+      "INT-001"
+    ],
+    "acceptance_criteria": [
+      "Deployment artifacts and environment variables are cataloged",
+      "Static frontend hosting and backend API dependency are documented together",
+      "Build-time versus runtime configuration constraints are identified"
+    ],
+    "status": "todo"
+  },
+  {
+    "id": "DOC-002",
+    "title": "Keep root documentation synchronized with generated planning artifacts",
+    "scope": "integration",
+    "files": [
+      "docs/plan.md",
+      "docs/tasks.json",
+      "README.md",
+      "chatbot-ui/README.md"
+    ],
+    "depends_on": [
+      "DOC-001",
+      "OPS-001",
+      "QA-001"
+    ],
+    "acceptance_criteria": [
+      "The plan and task inventory remain consistent with repository-level and frontend-level README files",
+      "Documentation reflects inferred backend architecture without overstating confirmed implementation details",
+      "All planning tasks remain atomic and executable"
+    ],
+    "status": "todo"
+  }
+]

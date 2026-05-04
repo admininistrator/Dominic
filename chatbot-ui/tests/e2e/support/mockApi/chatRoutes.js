@@ -1,5 +1,5 @@
 import { createSessionRecord, isoNow } from "./state";
-import { fulfillJson, fulfillNoContent } from "./http";
+import { fulfillJson, fulfillNoContent, fulfillText } from "./http";
 
 function ensureSessionStore(state, sessionId) {
   if (!state.messagesBySession[sessionId]) {
@@ -11,6 +11,68 @@ function touchSession(state, sessionId) {
   const session = state.sessions.find((row) => row.id === sessionId);
   if (!session) return;
   session.updated_at = isoNow();
+}
+
+function buildSseEvent(event, payload) {
+  return `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+}
+
+function paginateMessages(rows, { beforeId = null, limit = null, skip = 0 } = {}) {
+  let filteredRows = Array.isArray(rows) ? [...rows] : [];
+  if (typeof beforeId === "number") {
+    filteredRows = filteredRows.filter((row) => Number(row.id) < beforeId);
+  }
+
+  const descendingRows = filteredRows.sort((left, right) => Number(right.id) - Number(left.id));
+  const pagedRows = skip > 0 ? descendingRows.slice(skip) : descendingRows;
+  const safeLimit = typeof limit === "number" && limit > 0 ? limit : null;
+  const limitedRows = safeLimit ? pagedRows.slice(0, safeLimit + 1) : pagedRows;
+  const hasMore = safeLimit ? limitedRows.length > safeLimit : false;
+  const visibleRows = (hasMore ? limitedRows.slice(0, safeLimit) : limitedRows)
+    .slice()
+    .sort((left, right) => Number(left.id) - Number(right.id));
+
+  return {
+    items: visibleRows,
+    pagination: {
+      skip,
+      limit: safeLimit,
+      beforeId,
+      returned: visibleRows.length,
+      hasMore,
+      nextBeforeId: hasMore && visibleRows.length > 0 ? Number(visibleRows[0].id) : null,
+    },
+  };
+}
+
+function buildPaginationHeaders(pagination) {
+  const exposedHeaderNames = [
+    "X-Message-Pagination-Returned",
+    "X-Message-Pagination-Has-More",
+    "X-Message-Pagination-Limit",
+    "X-Message-Pagination-Before-Id",
+    "X-Message-Pagination-Next-Before-Id",
+    "X-Message-Pagination-Skip",
+  ];
+
+  const headers = {
+    "X-Message-Pagination-Returned": String(pagination.returned || 0),
+    "X-Message-Pagination-Has-More": pagination.hasMore ? "true" : "false",
+    "X-Message-Pagination-Skip": String(pagination.skip || 0),
+    "Access-Control-Expose-Headers": exposedHeaderNames.join(", "),
+  };
+
+  if (pagination.limit != null) {
+    headers["X-Message-Pagination-Limit"] = String(pagination.limit);
+  }
+  if (pagination.beforeId != null) {
+    headers["X-Message-Pagination-Before-Id"] = String(pagination.beforeId);
+  }
+  if (pagination.nextBeforeId != null) {
+    headers["X-Message-Pagination-Next-Before-Id"] = String(pagination.nextBeforeId);
+  }
+
+  return headers;
 }
 
 function buildAssistantMeta(model = null, reasoningEffort = null) {
@@ -80,18 +142,20 @@ function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocument
   };
 }
 
-export async function handleChatRoute({ route, request, path, method, state }) {
-  if (path === "/api/chat/usage/me" && method === "GET") {
+export async function handleChatRoute({ route, request, url, path, method, state }) {
+  const normalizedPath = path.replace(/^\/api\/v1(?=\/)/, "/api");
+
+  if (normalizedPath === "/api/chat/usage/me" && method === "GET") {
     await fulfillJson(route, state.usage);
     return true;
   }
 
-  if (path === "/api/chat/sessions" && method === "GET") {
+  if (normalizedPath === "/api/chat/sessions" && method === "GET") {
     await fulfillJson(route, state.sessions);
     return true;
   }
 
-  if (path === "/api/chat/sessions" && method === "POST") {
+  if (normalizedPath === "/api/chat/sessions" && method === "POST") {
     const nextSession = createSessionRecord({
       id: state.nextSessionId++,
       title: request.postDataJSON()?.title,
@@ -102,14 +166,22 @@ export async function handleChatRoute({ route, request, path, method, state }) {
     return true;
   }
 
-  const sessionMessagesMatch = path.match(/^\/api\/chat\/sessions\/(\d+)\/messages$/);
+  const sessionMessagesMatch = normalizedPath.match(/^\/api\/chat\/sessions\/(\d+)\/messages$/);
   if (sessionMessagesMatch && method === "GET") {
     const sessionId = Number(sessionMessagesMatch[1]);
-    await fulfillJson(route, state.messagesBySession[sessionId] || []);
+    const beforeIdRaw = url.searchParams.get("before_id");
+    const limitRaw = url.searchParams.get("limit");
+    const skipRaw = url.searchParams.get("skip");
+    const paginated = paginateMessages(state.messagesBySession[sessionId] || [], {
+      beforeId: beforeIdRaw ? Number(beforeIdRaw) : null,
+      limit: limitRaw ? Number(limitRaw) : null,
+      skip: skipRaw ? Number(skipRaw) : 0,
+    });
+    await fulfillJson(route, paginated.items, 200, buildPaginationHeaders(paginated.pagination));
     return true;
   }
 
-  const sessionMutationMatch = path.match(/^\/api\/chat\/sessions\/(\d+)$/);
+  const sessionMutationMatch = normalizedPath.match(/^\/api\/chat\/sessions\/(\d+)$/);
   if (sessionMutationMatch && method === "DELETE") {
     const sessionId = Number(sessionMutationMatch[1]);
     state.sessions = state.sessions.filter((session) => session.id !== sessionId);
@@ -131,11 +203,12 @@ export async function handleChatRoute({ route, request, path, method, state }) {
     return true;
   }
 
-  if (path === "/api/chat/" && method === "POST") {
+  if ((normalizedPath === "/api/chat/" || normalizedPath === "/api/chat/stream") && method === "POST") {
     const payload = request.postDataJSON();
     const sessionId = Number(payload.session_id);
     const requestId = `req-${state.nextRequestId++}`;
     state.lastChatRequest = payload;
+    state.lastChatTransport = normalizedPath === "/api/chat/stream" ? "stream" : "sync";
     const response = buildDefaultAssistantReply(
       state,
       sessionId,
@@ -170,6 +243,30 @@ export async function handleChatRoute({ route, request, path, method, state }) {
       },
     ];
     touchSession(state, sessionId);
+
+    if (normalizedPath === "/api/chat/stream") {
+      const reply = response.reply || "";
+      const streamBody = [
+        buildSseEvent("start", { request_id: requestId }),
+        buildSseEvent("delta", { text: reply.slice(0, Math.ceil(reply.length / 2)), request_id: requestId }),
+        buildSseEvent("delta", { text: reply.slice(Math.ceil(reply.length / 2)), request_id: requestId }),
+        buildSseEvent("final", {
+          success: true,
+          reply: response.reply,
+          request_id: requestId,
+          assistant_meta: response.assistant_meta,
+          sources: response.sources,
+          retrieval: response.retrieval,
+          usage: response.usage,
+        }),
+      ].join("");
+
+      await fulfillText(route, streamBody, 200, "text/event-stream", {
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+      return true;
+    }
 
     await fulfillJson(route, {
       reply: response.reply,

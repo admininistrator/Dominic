@@ -63,6 +63,7 @@ export function createApiState({
     reindexFailure,
     deleteFailure,
     lastChatRequest: null,
+    lastChatTransport: null,
     nextSessionId,
     nextDocumentId: 1,
     nextJobId: 1,

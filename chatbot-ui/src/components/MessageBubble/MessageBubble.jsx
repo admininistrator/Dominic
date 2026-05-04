@@ -252,7 +252,7 @@ export default function MessageBubble({
           <div className={`${styles.assistantCard} ${styles.markdown}`}>
             <ReactMarkdown
               components={{
-                a: ({ node: _node, ...props }) => <ExternalLink {...props} />,
+                a: ({ ...props }) => <ExternalLink {...props} />,
               }}
             >
               {contentToRender}

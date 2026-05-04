@@ -27,7 +27,7 @@ test.describe("Dominic chat smoke", () => {
 
     await expect(page.getByText("Session duy nhất sẽ bị xóa và tạo lại Chat 1.")).toHaveCount(0);
     await expect(page.getByText("Bắt đầu một cuộc trò chuyện mới")).toBeVisible();
-    await expect(page.getByText("Chat 1")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chat 1" })).toBeVisible();
   });
 
   test("uploads multiple knowledge file types into the active session", async ({ page }) => {
@@ -128,9 +128,9 @@ test.describe("Dominic chat smoke", () => {
     await page.getByTitle("Tìm kiếm").click();
     await page.getByPlaceholder("Tìm hội thoại...").fill("invoice");
 
-    await expect(page.getByText("Invoice support")).toBeVisible();
-    await expect(page.getByText("Refund policy workspace")).toHaveCount(0);
-    await expect(page.getByText("Escalation queue")).toHaveCount(0);
+    await expect(page.getByTestId(`sidebar-session-${invoiceSession.id}`)).toBeVisible();
+    await expect(page.getByTestId(`sidebar-session-${refundSession.id}`)).toHaveCount(0);
+    await expect(page.getByTestId(`sidebar-session-${escalationSession.id}`)).toHaveCount(0);
 
     await page.getByPlaceholder("Tìm hội thoại...").fill("missing-session");
     await expect(page.getByText("Không có hội thoại.")).toBeVisible();
@@ -155,7 +155,7 @@ test.describe("Dominic chat smoke", () => {
 
     await expect(page.getByText("Lịch sử cũ sẽ biến mất khi tạo chat mới.")).toHaveCount(0);
     await expect(page.getByText("Bắt đầu một cuộc trò chuyện mới")).toBeVisible();
-    await expect(page.getByText("Chat 3")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chat 3" })).toBeVisible();
   });
 
   test("sends the selected 9router model with web search enabled", async ({ page }) => {
@@ -176,6 +176,7 @@ test.describe("Dominic chat smoke", () => {
       model: "claude-sonnet-4.6",
       use_web_search: true,
     });
+    expect(state.lastChatTransport).toBe("stream");
   });
 
   test("stores and sends thinking effort for the selected GPT model", async ({ page }) => {
@@ -193,7 +194,7 @@ test.describe("Dominic chat smoke", () => {
     await page.getByTestId("chat-thinking-effort-high").click();
     await page.getByTestId("chat-textarea").fill("Kiem tra thinking effort theo model");
     await page.getByTestId("chat-send-button").click();
-    await expect(page.getByText("gpt-5.4-mini high")).toBeVisible();
+    await expect(page.getByText("GPT-5.4 Mini High")).toBeVisible();
 
     expect(state.lastChatRequest).toMatchObject({
       model: "gpt-5.4-mini",
@@ -237,7 +238,7 @@ test.describe("Dominic chat smoke", () => {
     await expect(page.getByTestId("web-search-toggle")).toContainText("Web search đang bật");
   });
 
-  test("renames a session when the input loses focus", async ({ page }) => {
+  test("shows the delete action for the active session on hover", async ({ page }) => {
     const activeSession = createSessionRecord({ id: 101, title: "Refund policy workspace" });
     const secondSession = createSessionRecord({ id: 102, title: "Escalation queue" });
     const state = createApiState({
@@ -248,14 +249,10 @@ test.describe("Dominic chat smoke", () => {
     await loginViaUi(page);
 
     await page.getByTestId(`sidebar-session-${activeSession.id}`).hover();
-    await page.getByTestId(`rename-session-button-${activeSession.id}`).click({ force: true });
-    await page.getByTestId(`rename-session-input-${activeSession.id}`).fill("Refund policy blur rename");
-    await page.getByTitle("Tìm kiếm").click();
-
-    await expect(page.getByText("Refund policy blur rename")).toBeVisible();
+    await expect(page.getByTestId(`delete-session-button-${activeSession.id}`)).toBeVisible();
   });
 
-  test("renames and deletes a session, then falls back to the remaining history", async ({ page }) => {
+  test("deletes a session and falls back to the remaining history", async ({ page }) => {
     const activeSession = createSessionRecord({ id: 101, title: "Refund policy workspace" });
     const fallbackSession = createSessionRecord({ id: 102, title: "Escalation queue" });
     const state = createApiState({
@@ -275,14 +272,8 @@ test.describe("Dominic chat smoke", () => {
     await expect(page.getByText("Lịch sử session hoàn tiền đang được hiển thị.")).toBeVisible();
 
     await page.getByTestId(`sidebar-session-${activeSession.id}`).hover();
-    await page.getByTestId(`rename-session-button-${activeSession.id}`).click({ force: true });
-    await page.getByTestId(`rename-session-input-${activeSession.id}`).fill("Refund policy archive");
-    await page.getByTestId(`rename-session-input-${activeSession.id}`).press("Enter");
-    await expect(page.getByText("Refund policy archive")).toBeVisible();
-
-    await page.getByTestId(`sidebar-session-${activeSession.id}`).hover();
     await page.getByTestId(`delete-session-button-${activeSession.id}`).click({ force: true });
-    await expect(page.getByText("Refund policy archive")).toHaveCount(0);
+    await expect(page.getByTestId(`sidebar-session-${activeSession.id}`)).toHaveCount(0);
     await expect(page.getByText("Lịch sử fallback session được tải khi session đầu bị xóa.")).toBeVisible();
   });
 
@@ -308,6 +299,38 @@ test.describe("Dominic chat smoke", () => {
     await page.getByTestId(`sidebar-session-${escalationSession.id}`).click();
     await expect(page.getByText("Phiên escalation hiển thị lịch sử khác với session hoàn tiền.")).toBeVisible();
     await expect(page.getByText("Phiên hoàn tiền đang hiển thị lịch sử của session đầu tiên.")).toHaveCount(0);
+  });
+
+  test("loads older messages from paginated session history", async ({ page }) => {
+    const activeSession = createSessionRecord({ id: 101, title: "Paginated history workspace" });
+    const state = createApiState({
+      sessions: [activeSession],
+    });
+
+    for (let index = 1; index <= 40; index += 1) {
+      addConversation(state, activeSession.id, {
+        userContent: `Câu hỏi lịch sử ${index}`,
+        assistantContent: `Câu trả lời lịch sử ${index}`,
+      });
+    }
+
+    await installApiMocks(page, state);
+
+    await loginViaUi(page);
+
+  await expect(page.getByText("Câu trả lời lịch sử 40")).toBeVisible();
+  await expect(page.getByText("Câu trả lời lịch sử 26")).toBeVisible();
+  await expect(page.getByText(/^Câu trả lời lịch sử 10$/)).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Tải lịch sử cũ hơn" }).click();
+
+  await expect(page.getByText(/^Câu trả lời lịch sử 11$/)).toBeVisible();
+  await expect(page.getByText(/^Câu trả lời lịch sử 1$/)).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Tải lịch sử cũ hơn" }).click();
+
+    await expect(page.getByText(/^Câu trả lời lịch sử 1$/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tải lịch sử cũ hơn" })).toHaveCount(0);
   });
 
   test("ingests raw text into the active session without leaking sources to a new chat", async ({ page }) => {

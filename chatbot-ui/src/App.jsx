@@ -34,7 +34,7 @@ import {
   searchKnowledge,
   uploadKnowledgeFile,
 } from "./service/knowledgeApi";
-import { clearAuthSession, getStoredAuthToken, setAuthSession } from "./service/apiClient";
+import { clearAuthSession, getStoredAuthToken, getStoredRefreshToken, refreshAuthSession, setAuthSession } from "./service/apiClient";
 import {
   AVAILABLE_CHAT_MODELS,
   DEFAULT_CHAT_MODEL,
@@ -924,8 +924,27 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      // First attempt — may get 401 when the access token has already expired.
+      try {
+        await logout();
+      } catch (firstError) {
+        // Only attempt a single refresh + retry when the initial call returned
+        // 401 AND a refresh token is still available.  Logout is kept as an
+        // explicit, self-contained flow and never enters the generic interceptor.
+        if (firstError?.response?.status === 401 && getStoredRefreshToken()) {
+          try {
+            await refreshAuthSession(); // rotates tokens; throws on invalid refresh
+            await logout();             // retry exactly once with the new access token
+          } catch {
+            // Refresh or logout-retry failed — the finally block below
+            // guarantees local state is cleared regardless.
+          }
+        }
+        // Non-401 first-attempt errors are also swallowed for the same reason.
+      }
     } finally {
+      // Always clear local auth state, whether the server call
+      // succeeded, was retried, or failed entirely.
       resetAuthState("");
     }
   };
@@ -1189,13 +1208,13 @@ export default function App() {
     }
   };
 
-  const handleSearchKnowledge = async ({ query, topK, documentId }) => {
+  const handleSearchKnowledge = async ({ query, topK }) => {
     setIsKnowledgeLoading(true);
     try {
+      // Panel search is owner-wide: do NOT send document_id, session_id, or scope.
       const data = await searchKnowledge({
         query,
         top_k: topK,
-        document_id: documentId,
       });
       setKnowledgeSearch(data);
       return {

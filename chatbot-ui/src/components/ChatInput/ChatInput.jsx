@@ -15,6 +15,12 @@ import styles from "./ChatInput.module.css";
 
 const MAX_IMAGES = 5;
 const MAX_SIZE_MB = 5;
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 const MAX_TEXTAREA_HEIGHT = 220;
 const POPUP_OPEN_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] };
 const POPUP_EXIT_TRANSITION = { duration: 0.36, ease: [0.22, 1, 0.36, 1] };
@@ -308,7 +314,7 @@ export default function ChatInput({
   };
 
   const handleFiles = async (files) => {
-    const allowed = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const allowed = Array.from(files).filter((f) => ALLOWED_IMAGE_TYPES.has(f.type));
     const remaining = MAX_IMAGES - images.length;
     if (remaining <= 0) return;
     const toAdd = allowed.slice(0, remaining);
@@ -326,7 +332,7 @@ export default function ChatInput({
   const handlePaste = (e) => {
     const items = Array.from(e.clipboardData?.items || []);
     const imageFiles = items
-      .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+      .filter((i) => i.kind === "file" && ALLOWED_IMAGE_TYPES.has(i.type))
       .map((i) => i.getAsFile());
     if (imageFiles.length) handleFiles(imageFiles);
   };
@@ -699,7 +705,7 @@ export default function ChatInput({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         multiple
         style={{ display: "none" }}
         onChange={(e) => handleFiles(e.target.files)}

@@ -45,6 +45,9 @@ function paginateMessages(rows, { beforeId = null, limit = null, skip = 0 } = {}
   };
 }
 
+// CHAT-BE-003 public contract: skip is no longer a pagination surface.
+// The mock no longer emits X-Message-Pagination-Skip so tests can assert
+// the browser never reads or depends on that header.
 function buildPaginationHeaders(pagination) {
   const exposedHeaderNames = [
     "X-Message-Pagination-Returned",
@@ -52,13 +55,11 @@ function buildPaginationHeaders(pagination) {
     "X-Message-Pagination-Limit",
     "X-Message-Pagination-Before-Id",
     "X-Message-Pagination-Next-Before-Id",
-    "X-Message-Pagination-Skip",
   ];
 
   const headers = {
     "X-Message-Pagination-Returned": String(pagination.returned || 0),
     "X-Message-Pagination-Has-More": pagination.hasMore ? "true" : "false",
-    "X-Message-Pagination-Skip": String(pagination.skip || 0),
     "Access-Control-Expose-Headers": exposedHeaderNames.join(", "),
   };
 
@@ -91,6 +92,17 @@ function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocument
     : null;
   const scopedDocument = state.documents.find((document) => document.session_id === sessionId) || null;
   const effectiveDocument = explicitDocument || scopedDocument;
+
+  // QA-001-K4 instrumentation: record which retrieval scope the mock resolved.
+  // "explicit"  — caller passed knowledge_document_id (chat-side explicit pin)
+  // "session"   — no explicit pin; a session-scoped doc was found for sessionId
+  // "none"      — no document resolved (web-search or no-knowledge path)
+  state.lastChatRetrieval = {
+    sessionId,
+    resolvedDocumentId: effectiveDocument?.id ?? null,
+    resolvedDocumentSessionId: effectiveDocument?.session_id ?? null,
+    scopeUsed: explicitDocument ? "explicit" : scopedDocument ? "session" : "none",
+  };
   const source = effectiveDocument
     ? {
         document_id: effectiveDocument.id,
@@ -171,7 +183,14 @@ export async function handleChatRoute({ route, request, url, path, method, state
     const sessionId = Number(sessionMessagesMatch[1]);
     const beforeIdRaw = url.searchParams.get("before_id");
     const limitRaw = url.searchParams.get("limit");
+    // Track raw skip value from the browser — must always be null under cursor-only contract.
     const skipRaw = url.searchParams.get("skip");
+    // Record params for regression assertions (CHAT-QA-003).
+    state.lastHistoryParams = {
+      beforeId: beforeIdRaw ? Number(beforeIdRaw) : null,
+      limit: limitRaw ? Number(limitRaw) : null,
+      rawSkip: skipRaw,          // null iff browser did not send skip param
+    };
     const paginated = paginateMessages(state.messagesBySession[sessionId] || [], {
       beforeId: beforeIdRaw ? Number(beforeIdRaw) : null,
       limit: limitRaw ? Number(limitRaw) : null,
@@ -246,20 +265,46 @@ export async function handleChatRoute({ route, request, url, path, method, state
 
     if (normalizedPath === "/api/chat/stream") {
       const reply = response.reply || "";
-      const streamBody = [
-        buildSseEvent("start", { request_id: requestId }),
-        buildSseEvent("delta", { text: reply.slice(0, Math.ceil(reply.length / 2)), request_id: requestId }),
-        buildSseEvent("delta", { text: reply.slice(Math.ceil(reply.length / 2)), request_id: requestId }),
-        buildSseEvent("final", {
-          success: true,
-          reply: response.reply,
-          request_id: requestId,
-          assistant_meta: response.assistant_meta,
-          sources: response.sources,
-          retrieval: response.retrieval,
-          usage: response.usage,
-        }),
-      ].join("");
+      let streamBody;
+
+      if (state.streamErrorOnly) {
+        // Regression: stream emits an `error` SSE event and closes — no `final`.
+        // The FE parser must treat `error` as terminal and surface the error
+        // without requiring a subsequent `final` event.
+        streamBody = [
+          buildSseEvent("start", { request_id: requestId }),
+          buildSseEvent("error", {
+            detail: "Stream kết thúc với lỗi từ backend.",
+            status_code: 500,
+            request_id: requestId,
+          }),
+        ].join("");
+      } else if (state.streamNoTerminal) {
+        // Regression: stream emits `start` + partial `delta` then closes with
+        // no terminal event at all (neither `error` nor `final`).
+        // The FE parser must detect the missing terminal and throw a protocol
+        // failure error (502).
+        streamBody = [
+          buildSseEvent("start", { request_id: requestId }),
+          buildSseEvent("delta", { text: reply.slice(0, Math.ceil(reply.length / 2)), request_id: requestId }),
+        ].join("");
+      } else {
+        // Happy path: success stream terminates with `final`.
+        streamBody = [
+          buildSseEvent("start", { request_id: requestId }),
+          buildSseEvent("delta", { text: reply.slice(0, Math.ceil(reply.length / 2)), request_id: requestId }),
+          buildSseEvent("delta", { text: reply.slice(Math.ceil(reply.length / 2)), request_id: requestId }),
+          buildSseEvent("final", {
+            success: true,
+            reply: response.reply,
+            request_id: requestId,
+            assistant_meta: response.assistant_meta,
+            sources: response.sources,
+            retrieval: response.retrieval,
+            usage: response.usage,
+          }),
+        ].join("");
+      }
 
       await fulfillText(route, streamBody, 200, "text/event-stream", {
         "Cache-Control": "no-cache",

@@ -141,6 +141,19 @@ export async function handleKnowledgeRoute({ route, request, url, path, method, 
       await fulfillError(route, state.searchFailure.status || 422, state.searchFailure.detail || "Search knowledge thất bại.");
       return true;
     }
+    // Contract guard: panel search must be owner-wide.
+    // Reject any request that leaks session_id, scope, or document_id.
+    const searchBody = request.postDataJSON() || {};
+    if ("session_id" in searchBody || "scope" in searchBody || "document_id" in searchBody) {
+      await fulfillError(
+        route,
+        400,
+        `[mock] panel search must be owner-wide: unexpected field(s) in body: ${
+          ["session_id", "scope", "document_id"].filter((k) => k in searchBody).join(", ")
+        }`,
+      );
+      return true;
+    }
     await fulfillJson(route, {
       query: request.postDataJSON()?.query || "refund policy",
       top_k: 5,

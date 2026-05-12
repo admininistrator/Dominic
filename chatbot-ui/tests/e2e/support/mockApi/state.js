@@ -26,12 +26,21 @@ export function createApiState({
   ingestFailure = null,
   reindexFailure = null,
   deleteFailure = null,
+  changePasswordFailure = null,
+  // When true the next POST /api/chat/stream will emit a single SSE `error`
+  // event and close the stream without a `final` event.
+  streamErrorOnly = false,
+  // When true the next POST /api/chat/stream will emit only `start` + `delta`
+  // events and close the stream without any terminal event (no `error`, no
+  // `final`).  The FE parser must treat this as a protocol failure.
+  streamNoTerminal = false,
 } = {}) {
   const safeSessions = Array.isArray(sessions) && sessions.length > 0 ? sessions : [createSessionRecord()];
   const nextSessionId = Math.max(...safeSessions.map((session) => session.id), 100) + 1;
 
   return {
     token: "smoke-token",
+    refreshToken: "smoke-refresh-token",
     user: {
       role: "user",
       ...user,
@@ -57,6 +66,18 @@ export function createApiState({
       rolling_output_tokens_used: 200,
     },
     resetCalls: [],
+    logoutCalls: [],
+    changePasswordCalls: [],
+    tokenGeneration: 0,
+    streamErrorOnly,
+    streamNoTerminal,
+    // When true the next POST /auth/logout will be rejected with 401 (then reset
+    // to false) to simulate a stale access token at the moment of logout.
+    rejectNextLogoutWith401: false,
+    // When set to a non-null value the next POST /auth/change-password will be
+    // rejected with that HTTP status code and message (then reset to null).
+    // e.g. { status: 400, message: "Mật khẩu hiện tại không đúng." }
+    rejectNextChangePasswordWith: changePasswordFailure,
     uploadFailure,
     searchFailure,
     ingestFailure,
@@ -64,12 +85,33 @@ export function createApiState({
     deleteFailure,
     lastChatRequest: null,
     lastChatTransport: null,
+    // Records the retrieval context resolved by the mock for the last chat request.
+    // Used by QA-001-K4 to assert session-aware vs owner-wide scoping split.
+    // Shape: { sessionId, resolvedDocumentId, resolvedDocumentSessionId, scopeUsed }
+    // scopeUsed: "session" | "explicit" | "none"
+    lastChatRetrieval: null,
+    // Records the raw query-params of the most recent GET /messages request.
+    // Tests assert rawSkip is always null (cursor-only contract, CHAT-BE-003).
+    lastHistoryParams: null,
     nextSessionId,
     nextDocumentId: 1,
     nextJobId: 1,
     nextMessageId: 1,
     nextRequestId: 1,
   };
+}
+
+/**
+ * Rotate both access_token and refresh_token in-place.
+ * Each call increments tokenGeneration and returns the new pair.
+ * @param {ReturnType<typeof createApiState>} state
+ * @returns {{ token: string, refreshToken: string }}
+ */
+export function rotateTokens(state) {
+  state.tokenGeneration += 1;
+  state.token = `smoke-token-v${state.tokenGeneration}`;
+  state.refreshToken = `smoke-refresh-v${state.tokenGeneration}`;
+  return { token: state.token, refreshToken: state.refreshToken };
 }
 
 function ensureSessionStore(state, sessionId) {

@@ -46,7 +46,6 @@ export default function KnowledgePanel({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const searchTopK = 5;
-  const searchScope = "all";
   const [feedback, setFeedback] = useState({ type: "info", text: "" });
   const [viewMode, setViewMode] = useState("list"); // "list" | "session" | "detail"
   const [selectedSessionId, setSelectedSessionId] = useState(null);
@@ -107,8 +106,11 @@ export default function KnowledgePanel({
 
   const handleDelete = async () => {
     if (!selectedDocument) return;
+    // Soft-delete: the document is deactivated and its chunks/index are removed,
+    // but the record is retained in the backend audit trail. This is NOT a
+    // permanent hard delete — admin hard-delete is a separate operation.
     const confirmed = window.confirm(
-      `Xóa tài liệu "${selectedDocument.title}" và toàn bộ chunks/index liên quan?`
+      `Xóa tài liệu "${selectedDocument.title}"? Tài liệu và các chunks/index liên quan sẽ bị gỡ khỏi knowledge base. Thao tác này có thể được khôi phục bởi admin nếu cần.`
     );
     if (!confirmed) return;
     const result = await onDeleteDocument(selectedDocument.id);
@@ -128,7 +130,6 @@ export default function KnowledgePanel({
     const result = await onSearchKnowledge({
       query: searchQuery.trim(),
       topK: Number(searchTopK || 5),
-      documentId: searchScope === "selected" ? selectedDocumentId : undefined,
     });
     setResult(result, "Search knowledge thành công.");
   };
@@ -247,10 +248,13 @@ export default function KnowledgePanel({
             </div>
           )}
 
-          {/* Search section */}
+          {/* Search section — standalone owner-wide search, independent of the active chat session */}
           <div className={styles.card}>
             <form onSubmit={handleSearchSubmit}>
-              <h3 className={styles.cardTitle}>Search knowledge base</h3>
+              <h3 className={styles.cardTitle}>Tìm kiếm knowledge base</h3>
+              <p className={styles.cardHint}>
+                Tìm kiếm toàn bộ tài liệu của bạn. Kết quả này độc lập với đoạn chat đang mở — chat sử dụng retrieval riêng khi gửi tin nhắn.
+              </p>
               <div className={styles.searchRow}>
                 <input
                   className={styles.input}

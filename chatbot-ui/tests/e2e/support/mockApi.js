@@ -9,6 +9,7 @@ import {
   createSearchResult,
   createSessionRecord,
   isoNow,
+  rotateTokens,
 } from "./mockApi/state";
 
 export {
@@ -18,6 +19,7 @@ export {
   createSearchResult,
   createSessionRecord,
   isoNow,
+  rotateTokens,
 };
 
 export async function installApiMocks(page, state) {

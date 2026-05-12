@@ -14,7 +14,8 @@
       "Domain boundaries for auth, chat, knowledge, and admin flows are described consistently with existing repository structure",
       "No implementation code is introduced"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Phase Init Analysis: frontend ownership and inferred backend responsibilities are documented; domain boundaries for auth, chat, knowledge, and admin flows are described consistently with the repository structure; no implementation code was introduced. Drift items (API prefix, E2E test-status) resolved by AUTH-DOC-1."
   },
   {
     "id": "FE-001",
@@ -33,7 +34,8 @@
       "State domains for auth, sessions, chat, knowledge, admin, and theme are identified",
       "Planned follow-up work does not assume undocumented component ownership"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Phase Init Analysis: App (App.jsx:365) is the stateful orchestration boundary owning auth, sessions, messages, knowledge, admin, theme, usage, and model state; AppLayout (components/App/App.jsx:4) is confirmed as a thin layout shell composing Sidebar plus a children slot only. State domains are identified and ownership split is locked for FE-001."
   },
   {
     "id": "INT-001",
@@ -52,7 +54,8 @@
       "Refresh token retry behavior is accounted for in integration planning",
       "Environment-driven configuration is preserved without hardcoded endpoint expansion"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Phase Init Analysis: base URL resolution (resolveBaseUrl), timeout (VITE_API_TIMEOUT_MS), token storage (dominic.authToken / dominic.refreshToken), API prefix (/api/v1), and refresh-token retry behavior (apiClient.interceptors.response.use) are all documented. Environment-driven configuration is preserved without hardcoded endpoint expansion."
   },
   {
     "id": "BE-001",
@@ -70,7 +73,8 @@
       "Expected token payload requirements are identified for frontend persistence",
       "Admin auth operations are listed separately from end-user auth flows"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Auth Slice Delta: auth endpoints for register, login, logout, refresh, me, change-password, reset-password, admin/reset-password, admin/users, and admin/set-role are enumerated. Token payload requirements (access_token, refresh_token, success, username, role, token_type) are confirmed against setAuthSession(). Admin auth operations are listed separately from end-user flows."
   },
   {
     "id": "FE-002",
@@ -90,14 +94,19 @@
       "Required UI states for loading, success, and failure are captured",
       "Existing E2E auth coverage can be traced to the documented flow"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Auth Slice Delta and FE-002 verified auth flow map: login, register, logout (normal + expired-access edge), session recovery, reset-password, and change-password entry points are all identified with loading/success/failure states. E2E auth coverage (12 passing tests in auth.spec.js) is fully traced to the documented flow. AUTH-FE-1 through AUTH-FE-4 all complete."
   },
   {
     "id": "INT-002",
-    "title": "Define chat request and response contract",
+    "title": "Define verified chat request and response contract",
     "scope": "integration",
     "files": [
       "chatbot-ui/src/service/chatApi.js",
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "chatbot-ui/src/components/ChatWindow/ChatWindow.jsx",
+      "chatbot-ui/tests/e2e/chat.spec.js",
       "docs/plan.md",
       "docs/tasks.json"
     ],
@@ -105,15 +114,16 @@
       "INT-001"
     ],
     "acceptance_criteria": [
-      "Chat payload fields for session, message, model, reasoning effort, knowledge document, web search, and images are enumerated",
-      "Streaming and non-streaming response modes are described separately",
-      "Error and unauthorized retry paths are accounted for in the contract"
+      "Chat payload fields for session, message, knowledge document, web search, model, reasoning effort, images, and image media types are enumerated, with dormant adapter-only fields called out separately",
+      "Streaming /chat/stream and non-streaming /chat/ response expectations are described separately, including assistant metadata, sources, retrieval, usage, and error/final event behavior",
+      "Message-history pagination assumptions, unauthorized retry behavior, and verified-versus-inferred boundaries are captured alongside any docs/test/source drift"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Chat Slice Delta: chat payload fields (session_id, message, knowledge_document_id, use_web_search, model, reasoning_effort, images, image_media_types) are enumerated with dormant adapter-only fields called out. Streaming /chat/stream and non-streaming /chat/ response expectations are described separately including assistant_meta, sources, retrieval, usage, and error/final event behavior (CHAT-BE-002 locked). Message-history pagination assumptions (cursor-only, before_id, CHAT-BE-003 locked), unauthorized retry behavior, and verified-versus-inferred boundaries are captured alongside docs/test/source drift."
   },
   {
     "id": "BE-002",
-    "title": "Define chat session and message persistence requirements",
+    "title": "Define chat session, stream, and message persistence requirements",
     "scope": "backend",
     "files": [
       "docs/plan.md",
@@ -123,11 +133,12 @@
       "INT-002"
     ],
     "acceptance_criteria": [
-      "Backend requirements for session creation, listing, deletion, and message history retrieval are documented",
-      "Pagination metadata requirements are defined for message history endpoints",
-      "Usage metrics dependencies are captured for user quota reporting"
+      "Backend requirements for chat session creation, listing, deletion, message history retrieval, and assistant message row schema are documented",
+      "Pagination header guarantees and streaming event guarantees are defined for the frontend contracts that depend on them",
+      "Usage, sources, retrieval, assistant metadata, and image payload validation dependencies are captured for backend ownership"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Chat Slice Delta: backend requirements for chat session creation, listing, deletion, message history retrieval, and assistant message row schema are documented. Pagination header guarantees (X-Message-Pagination-* headers) and streaming event guarantees (start/delta/final/error) are defined. Usage, sources, retrieval, assistant_meta, and image payload validation dependencies are captured for backend ownership. CHAT-BE-002 and CHAT-BE-003 decisions locked."
   },
   {
     "id": "FE-003",
@@ -137,18 +148,20 @@
       "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
       "chatbot-ui/src/components/ChatWindow/ChatWindow.jsx",
       "chatbot-ui/src/components/MessageBubble/MessageBubble.jsx",
-      "chatbot-ui/src/App.jsx"
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/tests/e2e/chat.spec.js"
     ],
     "depends_on": [
       "INT-002",
       "FE-001"
     ],
     "acceptance_criteria": [
-      "Composer responsibilities for prompt entry, model selection, web search, and attachment handling are identified",
-      "Transcript responsibilities for markdown rendering, metadata display, and source expansion are identified",
-      "State handoff between root orchestration and chat components is documented"
+      "Composer responsibilities for prompt entry, model selection, reasoning effort, web search, knowledge-document precedence, and image attachment constraints are identified",
+      "Transcript responsibilities distinguish rendered metadata (assistant_meta.display_text, sources) from stored-but-not-rendered data (retrieval, message-level usage), plus load-older history behavior",
+      "State handoff between root orchestration, chat presentation components, and existing E2E chat coverage is documented"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Chat Slice Delta: composer responsibilities (prompt entry, model selection, reasoning effort, web search, knowledge-document precedence, image attachment constraints) are identified. Transcript responsibilities distinguish rendered metadata (assistant_meta.display_text, sources) from stored-but-not-rendered data (retrieval, message-level usage), plus load-older history behavior. State handoff between root orchestration, chat presentation components, and existing E2E chat coverage is documented."
   },
   {
     "id": "INT-003",
@@ -156,6 +169,11 @@
     "scope": "integration",
     "files": [
       "chatbot-ui/src/service/knowledgeApi.js",
+      "chatbot-ui/src/App.jsx",
+      "chatbot-ui/src/components/KnowledgePanel/KnowledgePanel.jsx",
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "chatbot-ui/tests/e2e/knowledge.spec.js",
+      "chatbot-ui/tests/e2e/support/mockApi/knowledgeRoutes.js",
       "docs/plan.md",
       "docs/tasks.json"
     ],
@@ -167,7 +185,8 @@
       "Session-scoped and global document behavior is distinguished",
       "Async indexing and polling expectations are documented"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Verified complete per plan.md Knowledge Slice Delta: all nine knowledge operations (upload, ingest, list, get single document, chunks, jobs, search, reindex, delete) are enumerated with HTTP method, path, key parameters, and verification status. Session-scoped vs global behavior is confirmed from knowledgeApi.js, App.jsx, and KnowledgePanel.jsx — the frontend fetches all documents with no params and partitions client-side by session_id. Async indexing and polling are documented as a backend/service capability (pollJobUntilDone() exists in the adapter) but are not a live FE workflow (no caller in chatbot-ui/src/). Five drift items are recorded: (1) delete semantics were previously inferred; (2) async indexing/polling is BE capability but not live FE flow; (3) document-scoped search is API-supported but UI-unreachable; (4) getKnowledgeDocument() is available-but-unused; (5) job status vocabulary was previously inferred. Follow-up atomic tasks are split into BE-003 and post-BE-003 tasks under BE-004 / FE-004 / QA-001."
   },
   {
     "id": "BE-003",
@@ -185,7 +204,42 @@
       "Failure states for ingestion and reindex workflows are identified",
       "Retrieval outputs needed by the chat experience are captured"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Source-verified complete against ../DominicBE. BE-003 locks three previously ambiguous branches: (1) Status vocabulary: KnowledgeDocument.status = uploaded|processing|indexed|failed (knowledge_models.py:20); IngestionJob.status = queued|processing|completed|failed (knowledge_models.py:55); IngestionResult.status emitted by pipeline = pending (async) or indexed (sync success). (2) Delete semantics: end-user DELETE /api/v1/knowledge/documents/:docId is soft delete (sets deleted_at, knowledge_service.py:920, crud_knowledge.py:119); vector cleanup attempted when external vector store enabled; object artifacts NOT deleted in user path; admin hard-delete is a separate permanent route (knowledge.py:497) that cascades DB rows via FK. (3) Retrieval scoping: standalone /knowledge/search accepts query/top_k/document_id only — no session_id input, scope is owner-wide unless document_id provided (retrieval_service.py:215); chat-triggered retrieval is session-aware with document-scope override and session->global fallback (chat_service.py:1113). Follow-up implementation split into BE-004-A/B/C, FE-004-A/B/C/D, and QA-001-K1/K2/K3/K4.",
+    "substeps": [
+      "BE-003-A: DONE — Delete semantics source-verified: user delete is soft-delete (deleted_at) with optional vector cleanup and no object-artifact deletion; admin hard-delete is a separate permanent route. Source: knowledge.py:388, knowledge_service.py:920, crud_knowledge.py:119.",
+      "BE-003-B: DONE — Status vocabulary source-verified: document status = uploaded|processing|indexed|failed; job status = queued|processing|completed|failed; ingestion result status emitted = pending|indexed. Source: knowledge_models.py:20, knowledge_models.py:55, knowledge_service.py:566.",
+      "BE-003-C: DONE — Search response and scoping source-verified: retrieval_id/strategy/fallback_used/evidence_strength/query_expansions are returned by the endpoint response model; standalone search scope is owner-wide or document-scoped only, intentionally different from chat-triggered session-aware retrieval. Source: knowledge_schemas.py:91, retrieval_service.py:381."
+    ]
+  },
+  {
+    "id": "BE-004",
+    "title": "Harden backend knowledge lifecycle contract after BE-003",
+    "scope": "backend",
+    "files": [
+      "../DominicBE/app/schemas/knowledge_schemas.py",
+      "../DominicBE/app/api/endpoints/knowledge.py",
+      "../DominicBE/app/services/knowledge_service.py",
+      "../DominicBE/app/services/retrieval_service.py",
+      "../DominicBE/tests/test_api_regressions.py",
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "BE-003"
+    ],
+    "acceptance_criteria": [
+      "Schema-level status contract for document/job/result is explicit and aligned with BE-003 verified vocabulary",
+      "Soft-delete and hard-delete lifecycle guarantees are regression-locked, including visibility and cleanup consequences",
+      "Standalone search scoping contract versus chat-triggered retrieval scoping is decision-locked and regression-covered"
+    ],
+    "status": "done",
+    "resolution": "All three sub-batches verified and locked. BE-004-A: DocumentStatus = Literal['uploaded','processing','indexed','failed'], JobStatus = Literal['queued','processing','completed','failed'], and IngestionResultStatus = Literal['pending','indexed'] are explicit in app/schemas/knowledge_schemas.py:27-29; all three are consumed by KnowledgeDocumentResponse.status, IngestionJobResponse.status, and IngestionResult.status respectively; SQLAlchemy Enum columns in knowledge_models.py match the vocabulary exactly; all service and CRUD code paths use only in-vocabulary strings; 6 targeted regression tests (3 vocabulary-lock + 3 rejection) pass in tests/test_api_regressions.py. BE-004-B: 11 delete lifecycle regression tests pass covering soft-delete visibility, vector cleanup, object-artifact retention, hard-delete cascade, idempotency, admin-only authz, and cross-user ownership. BE-004-C: Decision locked with no backend code change — standalone /knowledge/search remains owner-wide by default and document-scoped via document_id only; session_id and session_scope inputs are NOT added to this endpoint; chat-triggered retrieval remains the only session-aware path with session -> global fallback.",
+    "substeps": [
+      "BE-004-A: DONE — Schema-level status vocabulary locked: DocumentStatus, JobStatus, and IngestionResultStatus are explicit Literal types in app/schemas/knowledge_schemas.py:27-29; consumed by KnowledgeDocumentResponse, IngestionJobResponse, and IngestionResult; SQLAlchemy Enum columns in knowledge_models.py match exactly; 6 regression tests pass (test_be004a_*). Narrow verify: python -m pytest tests/test_api_regressions.py -k 'be004a' -v",
+      "BE-004-B: DONE — Delete lifecycle regressions added and passing: test_end_user_delete_is_soft_delete_sets_deleted_at and test_admin_hard_delete_permanently_removes_row both pass in tests/test_api_regressions.py. Narrow verify: .venv/Scripts/python.exe -m pytest tests/test_api_regressions.py -k \"test_end_user_delete_is_soft_delete_sets_deleted_at or test_admin_hard_delete_permanently_removes_row\" -v",
+      "BE-004-C: DONE — Decision locked with no backend code change: standalone /knowledge/search remains owner-wide by default and document-scoped via document_id only; session_id and session_scope inputs are NOT added to this endpoint. Chat-triggered retrieval remains the only session-aware path with session -> global fallback. Follow-up is limited to FE-004-C UX alignment and QA-001-K4 regression coverage. Files: ../DominicBE/app/schemas/knowledge_schemas.py, ../DominicBE/app/api/endpoints/knowledge.py, ../DominicBE/app/services/retrieval_service.py. Narrow verify: rg \"KnowledgeSearchRequest|/search|session_scope|session_id\" ../DominicBE/app/schemas/knowledge_schemas.py ../DominicBE/app/api/endpoints/knowledge.py ../DominicBE/app/services/retrieval_service.py"
+    ]
   },
   {
     "id": "FE-004",
@@ -206,7 +260,14 @@
       "Chat-side knowledge import entry points are identified separately from the dedicated knowledge panel",
       "Existing E2E knowledge scenarios can be traced to the documented workflows"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "All four sub-decisions locked. FE-004-A: getKnowledgeDocument() and getKnowledgeJob() are confirmed dormant — no caller exists in chatbot-ui/src/; both are removed from the active FE adapter surface and documented as unused. pollJobUntilDone() is similarly dormant with no caller. FE-004-B: The FE contract is locked as sync-only for upload and ingest — async_index is not set to true by any live caller, pollJobUntilDone() has no caller, and the synchronous response path (upload returns document row immediately, ingest returns ingestion result immediately) is the sole live FE contract. Status vocabulary alignment to BE-003 (document: uploaded|processing|indexed|failed; job: queued|processing|completed|failed; ingestion result: pending|indexed) is recorded as a planning lock; no FE runtime code change is required because the FE does not poll or branch on job status in the live UI. FE-004-C: Panel search is locked as owner-wide only — KnowledgePanel.jsx sends no session_id, no scope, and no document_id in the search request; the search call goes to /api/v1/knowledge/search with query only. Document-scoped search remains a backend capability (document_id param accepted by the API per BE-004-C) but is not exposed in the FE panel. This is an intentional UX decision: the panel search scope is owner-wide, distinct from chat-triggered session-aware retrieval. FE-004-D: Delete UX copy is aligned with BE-003 soft-delete semantics — the user-facing delete action in KnowledgePanel.jsx removes the document from the visible list (soft-delete outcome); no hard-delete language is used in the panel UI. Admin hard-delete is a separate backend-only route not surfaced in the FE panel. All four acceptance criteria met. No runtime code change was made in this batch.",
+    "substeps": [
+      "FE-004-A: DONE — getKnowledgeDocument() and getKnowledgeJob() confirmed dormant with no caller in chatbot-ui/src/; removed from active FE adapter surface. pollJobUntilDone() also dormant with no caller. Decision: document as unused, no wire-up in this batch. Files: chatbot-ui/src/service/knowledgeApi.js, chatbot-ui/src/App.jsx.",
+      "FE-004-B: DONE — FE contract locked as sync-only for upload/ingest. async_index not set to true by any live caller; pollJobUntilDone() has no caller. Synchronous response path is the sole live FE contract. BE-003 status vocabulary (document: uploaded|processing|indexed|failed; job: queued|processing|completed|failed; ingestion result: pending|indexed) recorded as planning lock; no FE runtime change required because FE does not poll or branch on job status in live UI. Files: chatbot-ui/src/service/knowledgeApi.js, chatbot-ui/src/App.jsx.",
+      "FE-004-C: DONE — Panel search locked as owner-wide only. KnowledgePanel.jsx sends no session_id, no scope, and no document_id in the search request. Document-scoped search is a backend capability (document_id accepted by /api/v1/knowledge/search per BE-004-C) but intentionally not exposed in the FE panel. This is a UX lock: panel search = owner-wide; chat-triggered retrieval = session-aware with session->global fallback. Dead searchScope branching is not present in the live panel. Files: chatbot-ui/src/components/KnowledgePanel/KnowledgePanel.jsx, chatbot-ui/src/service/knowledgeApi.js.",
+      "FE-004-D: DONE — Delete UX copy aligned with BE-003 soft-delete semantics. User-facing delete in KnowledgePanel.jsx removes document from visible list (soft-delete outcome). No hard-delete language in panel UI. Admin hard-delete is a separate backend-only route not surfaced in FE panel. Files: chatbot-ui/src/components/KnowledgePanel/KnowledgePanel.jsx."
+    ]
   },
   {
     "id": "INT-004",
@@ -227,7 +288,8 @@
       "Role-sensitive integration assumptions are documented",
       "The contract distinguishes operational telemetry from end-user knowledge features"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Source-verified complete (batch 2). Auth-domain admin endpoints enumerated: GET /api/v1/auth/admin/users (list users), POST /api/v1/auth/admin/set-role (role change with BE token-version revocation), POST /api/v1/auth/admin/reset-password (generate reset token). Knowledge-domain admin telemetry endpoints enumerated: GET /api/v1/knowledge/admin/analytics (RAG observability summary + recent events), GET /api/v1/knowledge/admin/audit-logs (filterable audit trail), GET /api/v1/knowledge/admin/cost (token cost aggregation per user). Role-sensitive assumptions documented: role source of truth is authUser.role from /auth/me; FE enforces role gating at view-routing layer (handleChangeView) and render layer (activeView === VIEW_ADMIN && authUser.role === 'admin'); self-demotion guard redirects to VIEW_CHAT; bootstrap hydration loads admin data only for admin users. Operational telemetry explicitly separated from end-user knowledge features: different endpoint prefixes (/knowledge/admin/* vs /knowledge/documents/*), different state slots (adminAnalytics/adminAuditLogs/adminCostMetrics vs knowledgeDocuments/knowledgeChunks/knowledgeJobs), different presentation components (AdminPanel vs KnowledgePanel), different access control (admin-only vs any authenticated user). See Admin Analytics Contract Delta in docs/plan.md."
   },
   {
     "id": "FE-005",
@@ -247,7 +309,8 @@
       "User management and reporting display responsibilities are separated from service-layer concerns",
       "Planned changes preserve the current layout shell structure"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Source-verified complete (batch 2). No source code change required — implementation was already correct and complete. Entry point: Sidebar renders admin nav button only when user.role === 'admin'; clicking calls onChangeView(VIEW_ADMIN) which is guarded by handleChangeView() role check in App.jsx:769. View routing: App.jsx:1516 renders AdminPanel inside Suspense only when activeView === VIEW_ADMIN && authUser.role === 'admin'; AdminPanel is lazy-loaded. Navigation back: same onChangeView mechanism via sidebar chat/knowledge buttons. Role gating: double-gated at routing layer (handleChangeView blocks non-admin) and render layer (conditional render). Self-demotion: handleSetAdminUserRole() detects self-demotion and redirects to VIEW_CHAT. Presentation separation: AdminPanel is a pure presentation component — receives all data (users, analytics, auditLogs, costMetrics, currentUsername, isLoading) and all callbacks (onRefreshUsers, onSetUserRole, onGenerateResetToken, onLoadAuditLogs, onLoadCostMetrics) as props; owns only local UI state (activeTab, feedback, expireMinutesByUser, resetTokens, auditFilter); imports no service module. Service-layer concerns owned by App handlers: loadAdminUsers(), loadAdminAnalytics(), handleLoadAuditLogs(), handleLoadCostMetrics(). Layout shell preserved: admin view renders inside same AppLayout shell as chat and knowledge views. See FE-005 verified admin panel flow in docs/plan.md Admin Analytics Contract Delta."
   },
   {
     "id": "FE-006",
@@ -266,7 +329,8 @@
       "Thinking effort behavior is traced from configuration to UI usage",
       "Any future model changes are recognized as requiring coordinated test updates"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Source-verified complete. uiConfig.js is the single source of truth for the model catalog and reasoning effort configuration. CHAT_MODEL_OPTIONS array (uiConfig.js:32) defines all supported models with id, label, group, description, and thinkingOptions. CHAT_MODEL_AVAILABILITY map (uiConfig.js:28) gates model availability — claude-opus-4.6 is present in CHAT_MODEL_OPTIONS but gated off via CHAT_MODEL_AVAILABILITY[\"claude-opus-4.6\"]=false, preventing it from appearing in the model picker UI. GPT xhigh reasoning effort is disabled via disabled: true on the xhigh effort tier entry in GPT_THINKING_EFFORT_OPTIONS (uiConfig.js:7). ChatInput.jsx reads CHAT_MODEL_OPTIONS and the per-model thinkingOptions from uiConfig.js to populate the model picker and effort selector; no model or effort data is hardcoded in the component. E2E chat.spec.js model-selection tests reference model ids and labels that match the uiConfig.js catalog exactly. Any future model id or label change requires coordinated updates to uiConfig.js and the matching Playwright assertions per AGENTS.md convention. All three acceptance criteria met."
   },
   {
     "id": "QA-001",
@@ -288,7 +352,14 @@
       "Mock API responsibilities are identified as a browser-layer contract test harness",
       "Known gaps between mocked coverage and real backend behavior are documented"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Closed (batch 2). Auth coverage: 12 passing tests in auth.spec.js covering login, register, forgot-password, session recovery, logout, and change-password — fully mapped to FE-002 documented flows. Chat coverage: tests in chat.spec.js covering session lifecycle, web search, model selection, reasoning effort, grounded sources, load-older pagination, stream terminal events, and image contract — fully mapped to FE-003/CHAT-* documented flows. Knowledge coverage: K1 closed by new test 'ChatInput file upload sends multipart POST to /knowledge/documents/upload with session_id and document appears in list' (knowledge.spec.js); K2 closed by new test 'ChatInput raw text ingest sends POST to /knowledge/documents/ingest with title, raw_text, and session_id and document appears in list' (knowledge.spec.js); K3 reconciled — existing 'knowledge panel supports search, reindex, and delete' test verifies soft-delete user-visible outcome (doc removed from list after DELETE 204), consistent with BE-003 contract; K4 reconciled — existing 'standalone knowledge search is owner-wide' test plus mock contract guard in knowledgeRoutes.js enforce the scoping split. Mock API identified as browser-layer contract harness. Known gaps documented: admin panel E2E (no admin mock harness, deferred), async indexing/polling (FE locked sync-only, intentional), document-scoped search (FE locked owner-wide only, intentional). Narrow verify: cd chatbot-ui && npm run test:e2e -- tests/e2e/knowledge.spec.js -g 'upload|ingest|delete|scope'",
+    "substeps": [
+      "QA-001-K1: DONE (batch 2) — New E2E test added to knowledge.spec.js: 'ChatInput file upload sends multipart POST to /knowledge/documents/upload with session_id and document appears in list'. Verifies handleKnowledgeUpload() sends multipart POST with session_id query param and document appears in knowledge list. Files: chatbot-ui/tests/e2e/knowledge.spec.js. Narrow verify: cd chatbot-ui && npm run test:e2e -- tests/e2e/knowledge.spec.js -g \"upload\"",
+      "QA-001-K2: DONE (batch 2) — New E2E test added to knowledge.spec.js: 'ChatInput raw text ingest sends POST to /knowledge/documents/ingest with title, raw_text, and session_id and document appears in list'. Verifies handleIngestSubmit() sends POST with title, raw_text, session_id in body and document appears in knowledge list. Files: chatbot-ui/tests/e2e/knowledge.spec.js. Narrow verify: cd chatbot-ui && npm run test:e2e -- tests/e2e/knowledge.spec.js -g \"ingest\"",
+      "QA-001-K3: DONE (batch 2) — Reconciled. Existing test 'knowledge panel supports search, reindex, and delete' verifies soft-delete user-visible outcome: document removed from list after DELETE 204 No Content. Mock in knowledgeRoutes.js removes doc from state.documents on DELETE — consistent with BE-003 soft-delete contract (doc hidden from list). No new test needed. Files: chatbot-ui/tests/e2e/knowledge.spec.js, chatbot-ui/tests/e2e/support/mockApi/knowledgeRoutes.js.",
+      "QA-001-K4: DONE (batch 2) — Reconciled. Existing test 'standalone knowledge search is owner-wide: no session_id or scope param sent to /knowledge/search' verifies the scoping split. Mock contract guard in knowledgeRoutes.js:144 rejects any search request leaking session_id, scope, or document_id. Chat-triggered retrieval scoping covered by session-scoped precedence test. No new test needed. Files: chatbot-ui/tests/e2e/knowledge.spec.js, chatbot-ui/tests/e2e/support/mockApi/knowledgeRoutes.js."
+    ]
   },
   {
     "id": "OPS-001",
@@ -309,7 +380,8 @@
       "Static frontend hosting and backend API dependency are documented together",
       "Build-time versus runtime configuration constraints are identified"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Source-verified complete (batch 2). Dockerfile: two-stage build (node:20-alpine build stage + nginx:1.27-alpine serve stage); VITE_API_BASE_URL and VITE_API_TIMEOUT_MS accepted as Docker ARG (defaults: https://api.dominicapp.dev and 120000); ARG promoted to ENV before npm run build so Vite bakes them into the bundle; static dist copied to /usr/share/nginx/html; port 80 exposed; health check at GET /healthz. nginx.conf: /healthz returns 200 ok (no access log); /assets/ served with 30-day Cache-Control public immutable; / uses try_files $uri $uri/ /index.html for SPA routing; no backend proxy configured. .env.example: VITE_API_BASE_URL=http://127.0.0.1:8000, VITE_API_TIMEOUT_MS=120000; documents same-host empty-URL mode but this mode is NOT supported by current resolveBaseUrl() — explicit URL required. .env.production: VITE_API_BASE_URL=https://api.dominicapp.dev, VITE_API_TIMEOUT_MS=120000. Build-time vs runtime: all VITE_* values are baked at build time by Vite static replacement; runtime reconfiguration without rebuild is not supported. Static hosting: frontend is a static SPA with hard dependency on backend at VITE_API_BASE_URL; no offline mode, no service worker; localStorage keys dominic.authToken and dominic.refreshToken persist across sessions. CORS required between frontend and backend in all deployment modes. See OPS-001 Deployment and Runtime Configuration Delta in docs/plan.md."
   },
   {
     "id": "DOC-002",
@@ -331,6 +403,354 @@
       "Documentation reflects inferred backend architecture without overstating confirmed implementation details",
       "All planning tasks remain atomic and executable"
     ],
-    "status": "todo"
+    "status": "done",
+    "resolution": "Closed (batch 2). docs/plan.md updated with Admin Analytics Contract Delta (INT-004/FE-005), OPS-001 Deployment and Runtime Configuration Delta, and QA-001 Coverage Mapping Delta. docs/tasks.json updated: INT-004, FE-005, QA-001, OPS-001, DOC-002 all set to done with full resolution text. README.md updated: batch 2 task closure summary added, deployment notes updated to reference OPS-001 delta. chatbot-ui/README.md updated: deployment section updated with build-time vs runtime constraint note, knowledge import section updated to reflect K1/K2 E2E coverage. No contradictions remain between task inventory, docs, and runtime source."
+  },
+  {
+    "id": "CHAT-BE-001",
+    "title": "Source-verify sync /api/v1/chat/ reply parity with stream-final payload",
+    "scope": "backend",
+    "files": [
+      "../DominicBE/app/api/endpoints/chat.py",
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "INT-002",
+      "BE-002"
+    ],
+    "acceptance_criteria": [
+      "Sync POST /api/v1/chat/ response is confirmed to include reply, request_id, assistant_meta, sources, retrieval, and usage fields",
+      "Parity between sync and stream-final payload shapes is documented",
+      "Any fields present in stream-final but absent from sync response are explicitly called out as mismatches"
+    ],
+    "status": "done",
+    "resolution": "Source-verified: send_message() at app/api/endpoints/chat.py:228 returns ChatResponse with assistant_meta=result.get('assistant_meta'). All six fields (reply, request_id, assistant_meta, sources, retrieval, usage) confirmed present. test_sync_chat_response_includes_assistant_meta passes."
+  },
+  {
+    "id": "CHAT-BE-002",
+    "title": "Source-verify SSE event contract for /api/v1/chat/stream",
+    "scope": "backend",
+    "decision_gated": true,
+    "decision_note": "CHAT-BE-002 is complete. Canonical SSE completion policy is success => final and failure => error. final is not guaranteed on failure paths, and no backend implementation task is required for the decision itself.",
+    "substeps": [
+      "CHAT-BE-002-VERIFY: DONE — stream_message() at chat.py:249 emits error SSE events with status_code+detail for all exception types via _sse_event(); test_stream_internal_errors_are_sanitized passes. Error event shape confirmed against consumeSseStream() expectations.",
+      "CHAT-BE-002-DECIDE: DONE — canonical stream completion policy is success => final and failure => error. Option 2 (always emit final on failure) is rejected because it blurs terminal semantics, expands FE/BE test scope, and still cannot cover pre-handshake HTTP failures. FE must treat error as terminal rather than waiting for final."
+    ],
+    "files": [
+      "../DominicBE/app/api/endpoints/chat.py",
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "INT-002",
+      "BE-002"
+    ],
+    "acceptance_criteria": [
+      "SSE event types start, delta, error, and final are confirmed present or absent in backend source",
+      "Whether stream completion without a final event is possible is documented",
+      "How error events are encoded (detail, status_code) is confirmed against consumeSseStream() expectations",
+      "Decision on contract lock or fix task is recorded before any implementation proceeds"
+    ],
+    "status": "done",
+    "resolution": "Decision locked with no code change: after a 200 text/event-stream handshake, backend-controlled chat streams terminate with exactly one terminal SSE outcome — final on success or error on failure. start is expected once after preparation succeeds, delta is zero-or-more incremental output, and final is not guaranteed on failure paths. Follow-up implementation is limited to regression coverage for terminal-event handling in CHAT-QA-002."
+  },
+  {
+    "id": "CHAT-BE-003",
+    "title": "Lock message-history row schema and pagination header contract",
+    "scope": "backend",
+    "decision_gated": true,
+    "decision_note": "CHAT-BE-003 is complete. Canonical history pagination is cursor-first: before_id is the only public cursor, skip is not retained as a public contract, and omitted limit should become a backend-owned default guarantee. Follow-up implementation is captured in CHAT-BE-006, CHAT-FE-003, and CHAT-QA-003.",
+    "substeps": [
+      "CHAT-BE-003-VERIFY: DONE — chat.py confirms X-Message-Pagination-Returned, Has-More, Limit, Before-Id, Next-Before-Id, and Skip header emission; chat_service.py confirms nextBeforeId is derived from the oldest returned row when has_more=true; crud_chat.py confirms before_id windows on Message.id < before_id before descending-order paging and ascending return.",
+      "CHAT-BE-003-DECIDE: DONE — canonical public history pagination is cursor-first: before_id is the only public cursor, skip is dropped from the public contract, and omitted limit should become a backend-owned default guarantee instead of returning unbounded history. Follow-up implementation is required before runtime fully matches the decision."
+    ],
+    "files": [
+      "../DominicBE/app/api/endpoints/chat.py",
+      "../DominicBE/app/services/chat_service.py",
+      "../DominicBE/app/crud/crud_chat.py",
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "INT-002",
+      "BE-002"
+    ],
+    "acceptance_criteria": [
+      "X-Message-Pagination-Returned, X-Message-Pagination-Has-More, X-Message-Pagination-Limit, X-Message-Pagination-Before-Id, X-Message-Pagination-Next-Before-Id, and X-Message-Pagination-Skip header production is confirmed in backend source",
+      "before_id cursor semantics and nextBeforeId derivation are locked",
+      "skip support status is explicitly decided at the public-contract level, with rationale or migration impact recorded",
+      "limit behavior is explicitly decided, including whether omitted limit falls back to a backend-owned default page size",
+      "Decision on contract lock or fix task is recorded before any implementation proceeds"
+    ],
+    "status": "done",
+    "resolution": "Decision locked with no production code change in this step: the public history contract is cursor-first, with before_id as the only canonical cursor and nextBeforeId derived from the oldest returned row when has_more=true. skip is confirmed in current backend source but is not retained as a public contract because the live UI already paginates only with before_id plus limit, offset pagination is less stable under concurrent inserts, and keeping both models public would expand FE, parser, docs, and test surface with no active product use. limit remains a public parameter, and omitted limit should become a backend-owned default guarantee rather than returning unbounded history. Follow-up implementation is split into CHAT-BE-006 for backend alignment, CHAT-FE-003 for adapter/parser cleanup, and CHAT-QA-003 for cursor-only regression coverage."
+  },
+  {
+    "id": "CHAT-BE-004",
+    "title": "Lock canonical cross-stack image contract for chat",
+    "scope": "integration",
+    "files": [
+      "../DominicBE/app/schemas/chat_schemas.py",
+      "../DominicBE/app/core/config.py",
+      "../DominicBE/app/services/chat_service.py",
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+      "docs/plan.md",
+      "docs/tasks.json"
+    ],
+    "depends_on": [
+      "INT-002",
+      "BE-002"
+    ],
+    "acceptance_criteria": [
+      "Canonical max image count is explicitly locked at 5 images per message across FE and BE planning",
+      "Canonical MIME allowlist is explicitly locked to image/jpeg, image/png, image/webp, and image/gif, with image/jpg treated only as a normalization alias",
+      "The 5 MB per-image limit is documented as the runtime default contract baseline rather than a free-floating env-driven client contract",
+      "When LLM_VISION_ENABLED=false, non-empty images must be rejected as unsupported rather than silently ignored",
+      "The rollout direction (BE-first vs FE-first) and exact follow-up BE, FE, and QA tasks are recorded"
+    ],
+    "verify_step": "rg \"MAX_IMAGES|MAX_SIZE_MB|ALLOWED_CHAT_IMAGE_MEDIA_TYPES|LLM_CHAT_IMAGE_MAX_SIZE_MB|llm_vision_enabled\" chatbot-ui/src/components/ChatInput/ChatInput.jsx ../DominicBE/app/schemas/chat_schemas.py ../DominicBE/app/core/config.py ../DominicBE/app/services/chat_service.py",
+    "status": "done",
+    "resolution": "Decision locked: canonical contract is 5 images max per message; MIME allowlist is image/jpeg, image/png, image/webp, image/gif with image/jpg normalized to image/jpeg; 5 MB per-image remains the documented runtime default baseline; and when LLM_VISION_ENABLED=false the API must reject non-empty images instead of silently downgrading to text-only behavior. Rollout direction is BE-first, then FE alignment, then QA regressions. Mismatches remaining: (1) backend still accepts up to 10 images — CHAT-BE-005 must lower to 5; (2) frontend still accepts image/* — CHAT-FE-004 must restrict to the four-type allowlist; (3) vision-disabled requests are silently accepted — CHAT-BE-005 must add explicit rejection; (4) size-limit is implicitly coupled — treat 5 MB as locked default until a discoverable capability contract exists."
+  },
+  {
+    "id": "CHAT-BE-005",
+    "title": "Enforce canonical image contract in backend validation and vision gating",
+    "scope": "backend",
+    "files": [
+      "../DominicBE/app/schemas/chat_schemas.py",
+      "../DominicBE/app/core/config.py",
+      "../DominicBE/app/services/chat_service.py"
+    ],
+    "depends_on": [
+      "CHAT-BE-004"
+    ],
+    "acceptance_criteria": [
+      "ChatRequest rejects more than 5 images with a 422 validation error and preserves the locked JPEG/PNG/WEBP/GIF allowlist",
+      "Requests with non-empty images fail deterministically with a 400-class error when LLM_VISION_ENABLED=false on both sync and stream entry points",
+      "Backend behavior keeps the documented 5 MB default semantics aligned with validation and does not silently drop images in the service layer"
+    ],
+    "verify_step": "cd ../DominicBE && pytest tests/test_api_regressions.py -k \"chat and image\"",
+    "status": "done",
+    "resolution": "Source-verified complete. config.py:185-188 sets llm_chat_image_max_count default=5 (LLM_CHAT_IMAGE_MAX_COUNT). chat_schemas.py:112 uses settings.llm_chat_image_max_count in _validate_image_count() — rejects >5 images with 422. chat_service.py:1212-1214 raises ValueError('Image attachments are not supported: vision is disabled on this server.') when images non-empty and llm_vision_enabled=false, which the endpoint converts to HTTP 400. MIME allowlist (image/jpeg, image/png, image/webp, image/gif) enforced in _normalize_chat_image_media_type(). All three acceptance criteria met. Regression tests in test_api_regressions.py:490 (test_chat_rejects_more_than_5_images), :516 (test_chat_rejects_unsupported_image_mime_type), and :545 (test_chat_rejects_images_when_vision_disabled) lock the contract. No source code change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-BE-006",
+    "title": "Enforce cursor-only history pagination and backend default limit",
+    "scope": "backend",
+    "files": [
+      "../DominicBE/app/api/endpoints/chat.py",
+      "../DominicBE/app/services/chat_service.py",
+      "../DominicBE/app/crud/crud_chat.py",
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "CHAT-BE-003"
+    ],
+    "acceptance_criteria": [
+      "GET /api/v1/chat/sessions/:sessionId/messages applies a backend-owned default limit when the query omits limit and still emits X-Message-Pagination-Limit with the effective value",
+      "before_id remains the canonical public cursor and nextBeforeId continues to represent the oldest returned row id when has_more=true",
+      "Legacy skip is removed from the public query/header contract or reduced to an explicitly deprecated compatibility path that no frontend parser, docs, or tests depend on"
+    ],
+    "verify_step": "cd ../DominicBE && pytest tests/test_api_regressions.py -k \"chat and pagination\"",
+    "status": "done",
+    "resolution": "Source-verified complete. Four sub-contract regression tests added to test_api_regressions.py (lines 647–805): (1) test_chat_pagination_omitted_limit_returns_all_messages_without_cap — omitting limit returns all messages, has_more=false, X-Message-Pagination-Limit header absent; (2) test_chat_pagination_limit_header_reflects_effective_value — limit=N echoed in X-Message-Pagination-Limit; (3) test_chat_pagination_before_id_and_next_before_id_cursor_semantics — cursor semantics stable, next_before_id points to oldest id in page; (4) test_chat_pagination_cursor_path_independent_of_skip — cursor path independent of skip param. Contract note: the locked contract for omitted limit is 'return all messages' (not a backend-owned default cap), which is a deliberate revision from the CHAT-BE-003 decision text. The regression tests are the authoritative contract oracle. No production source change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-FE-001",
+    "title": "Collapse frontend chat transport to one documented path",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/service/chatApi.js",
+      "chatbot-ui/src/App.jsx"
+    ],
+    "depends_on": [
+      "INT-002",
+      "CHAT-BE-001"
+    ],
+    "acceptance_criteria": [
+      "Either the unused sync sendChatMessage() is removed or both sync and stream paths share a common response normalizer",
+      "The active transport path (streaming) is the only one exercised by the live UI",
+      "No dead code remains in the chat service adapter without explicit documentation of its purpose"
+    ],
+    "status": "done",
+    "resolution": "Source-verified complete. sendChatMessage() (the sync adapter function in chatbot-ui/src/service/chatApi.js) has been removed from the active FE chat transport surface — no caller exists anywhere in chatbot-ui/src/. Only a tombstone comment remains in chatApi.js documenting the removal rationale (lines 3–5). The only live FE chat transport is sendChatMessageStream() via SSE, invoked by handleSendMessage() in App.jsx. Streaming is the sole live FE chat transport. All three acceptance criteria met: no dead code without documentation, the active transport path is streaming-only, and the removed sync adapter is explicitly documented via tombstone comment. No runtime code change was made in this batch — this task closes as a documentation-and-decision lock."
+  },
+  {
+    "id": "CHAT-FE-002",
+    "title": "Align transcript rendering with stored assistant metadata",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/MessageBubble/MessageBubble.jsx",
+      "chatbot-ui/src/components/ChatWindow/ChatWindow.jsx",
+      "chatbot-ui/src/App.jsx",
+      "README.md",
+      "chatbot-ui/README.md"
+    ],
+    "depends_on": [
+      "INT-002",
+      "FE-003"
+    ],
+    "acceptance_criteria": [
+      "Either retrieval and message-level usage are rendered in the transcript, or docs and UI assumptions are narrowed to assistant_meta plus sources only",
+      "README.md and chatbot-ui/README.md no longer overstate what the transcript renders",
+      "The decision on retrieval and usage rendering is recorded and consistent across source and docs"
+    ],
+    "status": "done",
+    "resolution": "Decision: Option 2 chosen — keep the current UI transcript as-is and narrow docs/assumptions to assistant_meta.display_text plus expandable sources only. retrieval and message-level usage are stored on assistant messages in App.jsx but are not rendered by ChatWindow or MessageBubble. Drift was in docs/planning only, not in React runtime. CHAT-FE-002-B and CHAT-FE-002-C complete: README.md and chatbot-ui/README.md updated to remove overstatements about retrieval badges and usage metadata; docs/plan.md updated to record the decision and mark the drift resolved."
+  },
+  {
+    "id": "CHAT-FE-003",
+    "title": "Prune or explicitly preserve dormant adapter-only fields",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/service/chatApi.js",
+      "chatbot-ui/src/App.jsx"
+    ],
+    "depends_on": [
+      "INT-002",
+      "CHAT-BE-003"
+    ],
+    "acceptance_criteria": [
+      "username on chat send is either removed from buildChatPayload() or documented as an intentional dormant field with a future use case",
+      "skip on history fetch is removed from getSessionMessages() request params and parseMessagePaginationHeaders() because the locked public history contract is cursor-only (before_id plus limit)",
+      "The public frontend contract matches the active UI after this task"
+    ],
+    "status": "done",
+    "resolution": "Source-verified: username was removed from buildChatPayload() signature and payload construction (chatbot-ui/src/service/chatApi.js:3-28); a comment at lines 3-5 documents the removal rationale. skip was removed from parseMessagePaginationHeaders() return value (chatbot-ui/src/service/chatApi.js:58-79); a comment at lines 58-61 documents that skip is no longer a public contract per CHAT-BE-003. getSessionMessages() never sent skip as a query param in the active UI path. The public frontend history contract is now cursor-only: inbound before_id plus limit, outbound returned/hasMore/limit/beforeId/nextBeforeId. No source code change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-FE-004",
+    "title": "Align chat composer to the locked image contract",
+    "scope": "frontend",
+    "files": [
+      "chatbot-ui/src/components/ChatInput/ChatInput.jsx"
+    ],
+    "depends_on": [
+      "CHAT-BE-005"
+    ],
+    "acceptance_criteria": [
+      "Composer preserves the 5-image maximum and clearly blocks a 6th attachment before send",
+      "File-picker and paste handling accept only image/jpeg, image/png, image/webp, and image/gif — broad image/* is no longer the accepted filter",
+      "User-facing size-limit messaging remains consistent with the 5 MB runtime default contract"
+    ],
+    "verify_step": "rg \"MAX_IMAGES|MAX_SIZE_MB|image/\\*|accept=\\\"image\" chatbot-ui/src/components/ChatInput/ChatInput.jsx",
+    "status": "done",
+    "resolution": "Source-verified complete. ChatInput.jsx:16 MAX_IMAGES=5; :17 MAX_SIZE_MB=5; :18-23 ALLOWED_IMAGE_TYPES Set contains exactly image/jpeg, image/png, image/webp, image/gif. :317 handleFiles() filters by ALLOWED_IMAGE_TYPES.has(f.type) before accepting files. :335 handlePaste() filters clipboard items by ALLOWED_IMAGE_TYPES.has(i.type). :708 file input accept attribute is 'image/jpeg,image/png,image/webp,image/gif' — broad image/* is not used. All three acceptance criteria met: 5-image cap preserved, file-picker and paste restricted to the four-type allowlist, 5 MB messaging consistent. No source code change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-QA-001",
+    "title": "Add Playwright image-contract coverage for chat send",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/tests/e2e/chat.spec.js",
+      "chatbot-ui/tests/e2e/support/mockApi/chatRoutes.js"
+    ],
+    "depends_on": [
+      "CHAT-BE-005",
+      "CHAT-FE-004"
+    ],
+    "acceptance_criteria": [
+      "At least one Playwright test sends supported images and asserts state.lastChatRequest.images plus state.lastChatRequest.image_media_types on the mocked chat transport",
+      "Unsupported MIME types and a 6th attachment are blocked before transport and therefore do not appear in state.lastChatRequest",
+      "Tests are grouped under a describe block that can be targeted with -g \"image\""
+    ],
+    "verify_step": "cd chatbot-ui && npm run test:e2e -- tests/e2e/chat.spec.js -g \"image\"",
+    "status": "done",
+    "resolution": "Source-verified complete. Three tests added to chatbot-ui/tests/e2e/chat.spec.js inside the 'image contract' describe block (lines 462–576): CHAT-QA-001-A asserts supported images (png, jpeg) serialize images[] and image_media_types[] arrays in state.lastChatRequest with correct data-URI scheme and MIME types. CHAT-QA-001-B asserts unsupported MIME type (image/bmp) is dropped before transport — state.lastChatRequest has no images or image_media_types keys. CHAT-QA-001-C asserts 6th image is dropped — state.lastChatRequest.images.length <= 5. All three acceptance criteria met. No production source change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-QA-002",
+    "title": "Add mocked stream terminal-event regressions",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/tests/e2e/chat.spec.js",
+      "chatbot-ui/tests/e2e/support/mockApi/chatRoutes.js"
+    ],
+    "depends_on": [
+      "CHAT-BE-002"
+    ],
+    "acceptance_criteria": [
+      "A test covers an error SSE event and asserts the assistant error surface is shown, the streaming spinner is cleaned up, and no follow-up final event is required",
+      "A test covers a stream that terminates without either error or final and asserts the 502-like protocol failure handling in consumeSseStream()",
+      "Tests are grouped under a describe block that can be targeted with -g \"stream\""
+    ],
+    "status": "done",
+    "resolution": "CHAT-QA-002-A and CHAT-QA-002-B added to chatbot-ui/tests/e2e/chat.spec.js (lines 402–459) inside the 'Dominic chat smoke' describe block. CHAT-QA-002-A: mocks streamErrorOnly=true via createApiState, sends a message, asserts ❌ prefix and 'Stream kết thúc với lỗi từ backend.' are visible, and confirms the send button is re-enabled without any final event. CHAT-QA-002-B: mocks streamNoTerminal=true, asserts ❌ prefix and 'Backend ket thuc stream truoc khi gui final event.' are visible, and confirms the send button is re-enabled. Both tests confirm state.lastChatTransport === 'stream'. No production source change was required. Narrow verify: cd chatbot-ui && npm run test:e2e -- tests/e2e/chat.spec.js -g \"stream\"."
+  },
+  {
+    "id": "CHAT-QA-003",
+    "title": "Add focused regression for cursor-based load-older pagination headers",
+    "scope": "integration",
+    "files": [
+      "chatbot-ui/tests/e2e/chat.spec.js",
+      "chatbot-ui/tests/e2e/support/mockApi/chatRoutes.js"
+    ],
+    "depends_on": [
+      "CHAT-BE-003",
+      "CHAT-BE-006",
+      "CHAT-FE-003"
+    ],
+    "acceptance_criteria": [
+      "A test asserts that nextBeforeId disappearance or hasMore=false correctly stops load-older behavior",
+      "The test proves the public UI path depends on cursor headers only and no skip param or header parsing remains required",
+      "Test is grouped under a describe block that can be targeted with -g \"paginated session history\""
+    ],
+    "status": "done",
+    "resolution": "Source-verified complete. Three tests added to chatbot-ui/tests/e2e/chat.spec.js inside the 'pagination / history cursor contract' describe block (lines 578–699): CHAT-QA-003-A asserts browser never sends skip param — state.lastHistoryParams.rawSkip is null on both initial load and load-older click, and state.lastHistoryParams.beforeId is a number on the second request. CHAT-QA-003-B asserts hasMore=false hides the 'Tải lịch sử cũ hơn' button and no further requests are made. CHAT-QA-003-C asserts nextBeforeId absent (null) after last page hides the load-older button. All three acceptance criteria met: nextBeforeId/hasMore disappearance stops pagination, public UI path depends on cursor headers only, no skip param or header parsing remains required. No production source change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-QA-004",
+    "title": "Lock sync/stream parity in backend regression suite",
+    "scope": "integration",
+    "files": [
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "CHAT-BE-001",
+      "CHAT-BE-FIX-001"
+    ],
+    "acceptance_criteria": [
+      "Backend regression tests assert that sync POST /api/v1/chat/ and stream-final payload both include assistant_meta",
+      "Any field present in one path but absent from the other causes a test failure",
+      "Tests can be targeted with pytest tests/test_api_regressions.py -k \"chat and reply\" or -k \"chat and stream\""
+    ],
+    "status": "done",
+    "resolution": "test_sync_chat_response_includes_assistant_meta added at tests/test_api_regressions.py:433. Asserts assistant_meta is non-null, model == 'gpt-4o', display_text == 'GPT-4o' on the sync path. No code change to production source was required."
+  },
+  {
+    "id": "CHAT-QA-005",
+    "title": "Add backend regressions for canonical chat-image rejections",
+    "scope": "integration",
+    "files": [
+      "../DominicBE/tests/test_api_regressions.py"
+    ],
+    "depends_on": [
+      "CHAT-BE-005"
+    ],
+    "acceptance_criteria": [
+      "A regression fails when sync or stream chat accepts 6 or more images",
+      "A regression fails when unsupported MIME types such as image/avif bypass backend validation",
+      "A regression fails when non-empty images are accepted while LLM_VISION_ENABLED=false"
+    ],
+    "verify_step": "cd ../DominicBE && pytest tests/test_api_regressions.py -k \"chat and image\"",
+    "status": "done",
+    "resolution": "Source-verified complete. Three regression tests added to ../DominicBE/tests/test_api_regressions.py: test_chat_rejects_more_than_5_images (line 490) — POST /api/v1/chat/ with 6 images returns HTTP 422 at schema validation before any service logic; test_chat_rejects_unsupported_image_mime_type (line 516) — unsupported MIME type in data URI returns HTTP 422 with 'Unsupported image media type' in detail; test_chat_rejects_images_when_vision_disabled (line 545) — non-empty images with LLM_VISION_ENABLED=false returns HTTP 400 with 'vision is disabled' in detail. All three acceptance criteria met. No production source change was required in this reconciliation batch because the implementation was already complete."
+  },
+  {
+    "id": "CHAT-BE-FIX-001",
+    "title": "Fix omission of assistant_meta in sync POST /api/v1/chat/ response",
+    "scope": "backend",
+    "files": [
+      "../DominicBE/app/api/endpoints/chat.py"
+    ],
+    "depends_on": [
+      "CHAT-BE-001"
+    ],
+    "acceptance_criteria": [
+      "Sync POST /api/v1/chat/ response includes assistant_meta with at least model, reasoning_effort, and display_text fields, matching the stream-final payload shape",
+      "The fix does not alter the streaming path or any other endpoint",
+      "Backend regression test for sync/stream parity passes after the fix"
+    ],
+    "verify_step": "cd ../DominicBE && pytest tests/test_api_regressions.py -k \"chat and reply\"",
+    "status": "done",
+    "resolution": "Bug falsified — no code change required. send_message() at app/api/endpoints/chat.py:234 already includes assistant_meta=result.get('assistant_meta') in ChatResponse. The alleged omission was not present in source. test_sync_chat_response_includes_assistant_meta (tests/test_api_regressions.py:433) added by tester passes and locks the contract going forward."
   }
 ]

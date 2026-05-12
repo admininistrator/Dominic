@@ -1,7 +1,9 @@
 import apiClient, { API_PREFIX, getStoredAuthToken, refreshAuthSession } from "./apiClient";
 
+// NOTE: `username` was a dormant adapter field that was never populated by any
+// active call site (App.jsx sends session_id/message only). It has been removed
+// from the public signature to keep the chat-send contract clean.
 function buildChatPayload({
-  username,
   session_id,
   message,
   knowledge_document_id,
@@ -12,7 +14,6 @@ function buildChatPayload({
   image_media_types,
 }) {
   const payload = { session_id, message };
-  if (username) payload.username = username;
   if (knowledge_document_id) payload.knowledge_document_id = knowledge_document_id;
   if (use_web_search) payload.use_web_search = true;
   if (model) payload.model = model;
@@ -54,6 +55,10 @@ async function readErrorDetail(response) {
   return rawText;
 }
 
+// Public pagination surface: { returned, hasMore, limit, beforeId, nextBeforeId }
+// `skip` is no longer a public contract (CHAT-BE-003); it has been removed from
+// both the request params and the parsed response to prevent any consumer from
+// depending on it.
 function parseMessagePaginationHeaders(headers, fallback = {}) {
   const getHeaderValue = (name) => headers?.[name.toLowerCase()] ?? headers?.[name] ?? null;
   const parseNumber = (value, nextFallback = null) => {
@@ -70,7 +75,6 @@ function parseMessagePaginationHeaders(headers, fallback = {}) {
       getHeaderValue("x-message-pagination-next-before-id"),
       fallback.nextBeforeId ?? null
     ),
-    skip: parseNumber(getHeaderValue("x-message-pagination-skip"), fallback.skip ?? 0),
   };
 }
 
@@ -145,32 +149,10 @@ async function consumeSseStream(stream, onEvent) {
   return finalPayload;
 }
 
-export async function sendChatMessage({
-  username,
-  session_id,
-  message,
-  knowledge_document_id,
-  use_web_search,
-  model,
-  reasoning_effort,
-  images,          // [{dataUri, type}] – optional
-  image_media_types, // [string] – optional
-}) {
-  const payload = buildChatPayload({
-    username,
-    session_id,
-    message,
-    knowledge_document_id,
-    use_web_search,
-    model,
-    reasoning_effort,
-    images,
-    image_media_types,
-  });
-  const response = await apiClient.post(`${API_PREFIX}/chat/`, payload);
-  return response.data;
-}
-
+// sendChatMessage (sync Axios adapter) was removed – no caller existed in
+// chatbot-ui/src after the streaming path became the sole live transport.
+// The backend POST /api/v1/chat/ endpoint is still available; re-add this
+// export only if a non-streaming consumer is intentionally introduced.
 
 export async function sendChatMessageStream(payload, { signal, onEvent } = {}) {
   const baseUrl = apiClient.defaults.baseURL || window.location.origin;
@@ -235,9 +217,11 @@ export async function getSessions() {
 }
 
 
-export async function getSessionMessages(sessionId, { skip, limit, beforeId } = {}) {
+// Public cursor contract (CHAT-BE-003): only `before_id` and `limit` are sent.
+// `skip` is no longer a public query param; omitting `limit` lets the backend
+// apply its own default guarantee.
+export async function getSessionMessages(sessionId, { limit, beforeId } = {}) {
   const params = {};
-  if (typeof skip === "number") params.skip = skip;
   if (typeof limit === "number") params.limit = limit;
   if (typeof beforeId === "number") params.before_id = beforeId;
 
@@ -246,7 +230,6 @@ export async function getSessionMessages(sessionId, { skip, limit, beforeId } = 
     items: response.data,
     pagination: parseMessagePaginationHeaders(response.headers, {
       returned: Array.isArray(response.data) ? response.data.length : 0,
-      skip,
       limit,
       beforeId,
     }),

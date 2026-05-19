@@ -66,7 +66,7 @@ VITE_API_TIMEOUT_MS=120000
 
 ### Cần làm tiếp khi deploy AWS
 
-- đọc guide `DominicBE/DEPLOY_AWS_EC2_DOCKER.md`
+- đọc guide `../../DominicBE/DEPLOY_AWS_EC2_DOCKER.md`
 - bảo đảm frontend repo được clone thành sibling của backend repo trên EC2
 - truyền `FRONTEND_VITE_API_BASE_URL=https://api.dominicapp.dev` qua file `.env.ec2` ở backend repo trước khi chạy compose
 

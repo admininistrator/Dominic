@@ -4,3 +4,4 @@ chatbot-ui/.env.local
 chatbot-ui/.env.*.local
 .idea/
 .kiro/
+DESIGN.md

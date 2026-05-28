@@ -16,6 +16,7 @@ import {
 import {
   createSession,
   deleteSession,
+  getChatModelCatalog,
   getSessionMessages,
   getSessions,
   getUsage,
@@ -39,12 +40,14 @@ import {
   AVAILABLE_CHAT_MODELS,
   DEFAULT_CHAT_MODEL,
   SUPPORTED_CHAT_MODELS,
+  configureChatModelCatalog,
   getChatModelDisplayText,
   getDefaultThinkingEffortForModel,
   normalizeThinkingEffortForModel,
   supportsThinkingEffort,
 } from "./config/uiConfig";
 import "./styles/globals.css";
+import { loadAndApplyDesign } from "./utils/themeParser";
 
 const AdminPanel = lazy(() => import("./components/AdminPanel/AdminPanel"));
 const ChatInput = lazy(() => import("./components/ChatInput/ChatInput"));
@@ -396,8 +399,14 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [usage, setUsage] = useState(EMPTY_USAGE);
   const [theme, setTheme] = useState(getInitialTheme);
+  const [activeDesign, setActiveDesign] = useState("modern");
   const [selectedChatModel, setSelectedChatModel] = useState(getInitialChatModel);
   const [thinkingEffortByModel, setThinkingEffortByModel] = useState(getInitialThinkingEffortByModel);
+  const [chatModelCatalogState, setChatModelCatalogState] = useState(() => ({
+    defaultModel: DEFAULT_CHAT_MODEL,
+    supportedModels: SUPPORTED_CHAT_MODELS,
+    availableModels: AVAILABLE_CHAT_MODELS,
+  }));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -407,7 +416,41 @@ export default function App() {
   useEffect(() => {
     if (!selectedChatModel || AVAILABLE_CHAT_MODELS.includes(selectedChatModel)) return;
     setSelectedChatModel(DEFAULT_CHAT_MODEL);
-  }, [selectedChatModel]);
+  }, [selectedChatModel, chatModelCatalogState]);
+
+  useEffect(() => {
+    if (!authUser?.username) return undefined;
+    let cancelled = false;
+
+    getChatModelCatalog()
+      .then((catalog) => {
+        if (cancelled) return;
+        const nextCatalogState = configureChatModelCatalog(catalog);
+        setChatModelCatalogState(nextCatalogState);
+        setSelectedChatModel((current) => (
+          nextCatalogState.availableModels.includes(current)
+            ? current
+            : nextCatalogState.defaultModel || nextCatalogState.availableModels[0] || ""
+        ));
+        setThinkingEffortByModel((current) => (
+          Object.fromEntries(
+            Object.entries(current)
+              .filter(([modelName]) => nextCatalogState.availableModels.includes(modelName))
+              .map(([modelName, effort]) => [modelName, normalizeThinkingEffortForModel(modelName, effort)])
+              .filter(([, effort]) => Boolean(effort))
+          )
+        ));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const fallbackCatalogState = configureChatModelCatalog();
+        setChatModelCatalogState(fallbackCatalogState);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.username]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -467,6 +510,12 @@ export default function App() {
     document.documentElement.style.colorScheme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    loadAndApplyDesign(`/DESIGN-${activeDesign}.md`).catch(err => {
+      console.error("Failed to load design:", err);
+    });
+  }, [activeDesign]);
 
   const showChatLoadError = useCallback((error, fallback = "Không tải được lịch sử chat từ database.") => {
     setMessagePagination(createEmptyMessagePagination());
@@ -1554,7 +1603,7 @@ export default function App() {
               isKnowledgeLoading={isKnowledgeLoading}
               sessionDocuments={currentSessionDocuments}
               selectedModel={selectedChatModel}
-              availableModels={SUPPORTED_CHAT_MODELS}
+              availableModels={chatModelCatalogState.supportedModels}
               onModelChange={setSelectedChatModel}
               thinkingEffortByModel={thinkingEffortByModel}
               onThinkingEffortChange={handleThinkingEffortChange}
@@ -1567,25 +1616,65 @@ export default function App() {
     screenKey = "workspace";
     screenClassName = "workspaceStage";
     screenContent = (
-      <AppLayout
-        user={authUser}
-        activeView={activeView}
-        onChangeView={handleChangeView}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onCreateSession={handleCreateSession}
-        onSelectSession={handleSelectSession}
-        onDeleteSession={handleDeleteSession}
-        onLogout={handleLogout}
-        onChangePassword={handleChangePassword}
-        theme={theme}
-        onThemeChange={setTheme}
-        isPasswordBusy={isPasswordBusy}
-        totalTokenUsed={usage.total_token_used}
-        maxTokensPerDay={usage.max_tokens_per_day}
-      >
-        {mainContent}
-      </AppLayout>
+      <>
+        <AppLayout
+          user={authUser}
+          activeView={activeView}
+          onChangeView={handleChangeView}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onCreateSession={handleCreateSession}
+          onSelectSession={handleSelectSession}
+          onDeleteSession={handleDeleteSession}
+          onLogout={handleLogout}
+          onChangePassword={handleChangePassword}
+          theme={theme}
+          onThemeChange={setTheme}
+          isPasswordBusy={isPasswordBusy}
+          totalTokenUsed={usage.total_token_used}
+          maxTokensPerDay={usage.max_tokens_per_day}
+        >
+          {mainContent}
+        </AppLayout>
+
+        {authUser && (
+          <div style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 9999, background: "var(--panel)", padding: "10px", borderRadius: "8px", border: "1px solid var(--shell-border)", boxShadow: "var(--shell-shadow)", display: "flex", gap: "10px", alignItems: "center" }}>
+            <span style={{ fontSize: "12px", color: "var(--text)", fontWeight: "bold" }}>UI Design:</span>
+            <select 
+              value={activeDesign} 
+              onChange={(e) => setActiveDesign(e.target.value)}
+              style={{ padding: "4px 8px", background: "var(--bg)", color: "var(--text)", border: "1px solid var(--shell-border)", borderRadius: "4px", fontSize: "12px", outline: "none" }}
+            >
+              <option value="modern">Modern (Stitch)</option>
+              <option value="legacy">Legacy (Dominic)</option>
+            </select>
+            <input 
+              type="file" 
+              accept=".md" 
+              style={{ display: "none" }} 
+              id="design-upload"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    import('./utils/themeParser').then(({ loadAndApplyDesign }) => {
+                      loadAndApplyDesign(ev.target.result, false).catch(console.error);
+                    });
+                  };
+                  reader.readAsText(file);
+                }
+              }}
+            />
+            <button 
+              onClick={() => document.getElementById('design-upload').click()} 
+              style={{ padding: "4px 8px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "4px", fontSize: "12px", cursor: "pointer", fontWeight: "bold" }}
+            >
+              Upload .md
+            </button>
+          </div>
+        )}
+      </>
     );
   }
 

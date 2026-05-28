@@ -1,138 +1,100 @@
 export const TYPEWRITER_INTERVAL_MS = 12;
 
-const GPT_THINKING_EFFORT_OPTIONS = [
-	{ value: "low", label: "Low" },
-	{ value: "medium", label: "Medium" },
-	{ value: "high", label: "High" },
-	{ value: "xhigh", label: "xHigh", disabled: true },
-];
-
-const CLAUDE_SONNET_THINKING_EFFORT_OPTIONS = [
-	{ value: "low", label: "Low" },
-	{ value: "medium", label: "Medium" },
-	{ value: "high", label: "High" },
-];
-
-const CLAUDE_OPUS_THINKING_EFFORT_OPTIONS = [
-	{ value: "low", label: "Low" },
-	{ value: "medium", label: "Medium" },
-	{ value: "high", label: "High" },
-	{ value: "xhigh", label: "xHigh" },
-];
-
-const KILOCODE_THINKING_MODE_OPTIONS = [
-	{ value: "instant", label: "Instant" },
-	{ value: "thinking", label: "Thinking" },
-];
-
-export const CHAT_MODEL_AVAILABILITY = {
-	"claude-opus-4.6": false,
+const FALLBACK_MODEL_CATALOG = {
+	defaultModel: "gpt-5.4",
+	models: [
+		{
+			id: "gpt-5.4",
+			label: "GPT-5.4",
+			displayProvider: "OpenAI",
+			enabled: true,
+			default: true,
+			capabilities: {
+				reasoningEffort: {
+					enabled: true,
+					allowedValues: ["low", "medium", "high"],
+					default: "medium",
+					userConfigurable: true,
+				},
+			},
+		},
+	],
 };
 
-export const CHAT_MODEL_OPTIONS = [
-	{
-		id: "gpt-5.3-codex",
-		label: "GPT-5.3 Codex",
-		group: "OpenAI",
-		description: "From OpenAI",
-		thinkingOptions: GPT_THINKING_EFFORT_OPTIONS,
-	},
-	{
-		id: "gpt-5.4",
-		label: "GPT-5.4",
-		group: "OpenAI",
-		description: "From OpenAI",
-		thinkingOptions: GPT_THINKING_EFFORT_OPTIONS,
-	},
-	{
-		id: "gemini-3.1-pro-preview",
-		label: "Gemini 3.1 Pro Preview",
-		group: "Google",
-		description: "From Google",
-		thinkingOptions: [],
-	},
-	{
-		id: "claude-haiku-4.5",
-		label: "Claude Haiku 4.5",
-		group: "Anthropic",
-		description: "From Anthropic",
-		thinkingOptions: [],
-	},
-	{
-		id: "gpt-5.4-mini",
-		label: "GPT-5.4 Mini",
-		group: "OpenAI",
-		description: "From OpenAI",
-		thinkingOptions: GPT_THINKING_EFFORT_OPTIONS,
-	},
-	{
-		id: "claude-sonnet-4.6",
-		label: "Claude Sonnet 4.6",
-		group: "Anthropic",
-		description: "From Anthropic",
-		thinkingOptions: CLAUDE_SONNET_THINKING_EFFORT_OPTIONS,
-	},
-	{
-		id: "claude-opus-4.6",
-		label: "Claude Opus 4.6",
-		group: "Anthropic",
-		description: "From Anthropic",
-		thinkingOptions: CLAUDE_OPUS_THINKING_EFFORT_OPTIONS,
-	},
-	{
-		id: "deepseek-v4-pro",
-		label: "DeepSeek V4 Pro",
-		group: "DeepSeek",
-		description: "From DeepSeek",
-		thinkingOptions: [],
-	},
-	{
-		id: "kc/nvidia/nemotron-3-super-120b-a12b:free",
-		label: "NVIDIA Nemotron 3 Super 120B",
-		group: "KiloCode",
-		description: "From NVIDIA",
-		thinkingOptions: [],
-	},
-	{
-		id: "kc/moonshotai/kimi-k2.6",
-		label: "MoonshotAI Kimi K2.6",
-		group: "KiloCode",
-		description: "From MoonshotAI",
-		thinkingOptions: KILOCODE_THINKING_MODE_OPTIONS,
-	},
-	{
-		id: "kc/inclusionai/ling-2.6-1t:free",
-		label: "inclusionAI Ling-2.6-1T",
-		group: "KiloCode",
-		description: "From inclusionAI",
-		thinkingOptions: [],
-	},
-	{
-		id: "kc/qwen/qwen3.6-plus",
-		label: "Qwen 3.6 Plus",
-		group: "KiloCode",
-		description: "From Qwen",
-		thinkingOptions: KILOCODE_THINKING_MODE_OPTIONS,
-	},
-	{
-		id: "kc/minimax/minimax-m2.7",
-		label: "MiniMax M2.7",
-		group: "KiloCode",
-		description: "From MiniMax",
-		thinkingOptions: [],
-	},
-].map((option) => ({
-	...option,
-	available: (CHAT_MODEL_AVAILABILITY[option.id] ?? true) !== false,
-}));
+const CHAT_MODEL_GROUP_ORDER = ["OpenAI", "Anthropic", "Google/Gemini", "Google", "DeepSeek", "NVIDIA", "Custom"];
 
-const CHAT_MODEL_GROUP_ORDER = ["OpenAI", "Anthropic", "Google", "DeepSeek", "KiloCode"];
+export let CHAT_MODEL_OPTIONS = [];
+export let SUPPORTED_CHAT_MODELS = [];
+export let AVAILABLE_CHAT_MODELS = [];
+export let DEFAULT_CHAT_MODEL = "";
 
-export const SUPPORTED_CHAT_MODELS = CHAT_MODEL_OPTIONS.map((option) => option.id);
-export const AVAILABLE_CHAT_MODELS = CHAT_MODEL_OPTIONS.filter((option) => option.available).map((option) => option.id);
-export const DEFAULT_CHAT_MODEL = AVAILABLE_CHAT_MODELS.includes("gpt-5.4")
-	? "gpt-5.4"
-	: AVAILABLE_CHAT_MODELS[0] || SUPPORTED_CHAT_MODELS[0] || "";
+function labelForEffort(value) {
+	const normalized = String(value || "").trim().toLowerCase();
+	const labels = {
+		instant: "Instant",
+		thinking: "Thinking",
+		minimal: "Minimal",
+		low: "Low",
+		medium: "Medium",
+		high: "High",
+		xhigh: "xHigh",
+	};
+	return labels[normalized] || normalized;
+}
+
+function normalizeReasoningOptions(model) {
+	const capability = model?.capabilities?.reasoningEffort;
+	if (!capability?.enabled || capability.userConfigurable === false) return [];
+	const allowedValues = Array.isArray(capability.allowedValues) ? capability.allowedValues : [];
+	return allowedValues
+		.map((value) => String(value || "").trim().toLowerCase())
+		.filter(Boolean)
+		.map((value) => ({ value, label: labelForEffort(value) }));
+}
+
+function normalizeCatalog(rawCatalog) {
+	const source = rawCatalog && Array.isArray(rawCatalog.models) ? rawCatalog : FALLBACK_MODEL_CATALOG;
+	const models = source.models
+		.filter((model) => model && typeof model.id === "string" && model.id.trim())
+		.map((model) => {
+			const id = model.id.trim();
+			const displayProvider = String(model.displayProvider || model.providerLabel || "Other").trim() || "Other";
+			return {
+				id,
+				label: String(model.label || id).trim(),
+				group: displayProvider,
+				description: `From ${displayProvider}`,
+				available: model.enabled !== false,
+				default: Boolean(model.default),
+				thinkingOptions: normalizeReasoningOptions(model),
+				thinkingDefault: String(model?.capabilities?.reasoningEffort?.default || "").trim().toLowerCase() || null,
+			};
+		});
+
+	const available = models.filter((option) => option.available);
+	const defaultModel = String(source.defaultModel || "").trim();
+	const resolvedDefault = available.some((option) => option.id === defaultModel)
+		? defaultModel
+		: available.find((option) => option.default)?.id || available[0]?.id || models[0]?.id || "";
+
+	return { models, defaultModel: resolvedDefault };
+}
+
+export function configureChatModelCatalog(rawCatalog) {
+	const catalog = normalizeCatalog(rawCatalog);
+	CHAT_MODEL_OPTIONS = catalog.models;
+	SUPPORTED_CHAT_MODELS = CHAT_MODEL_OPTIONS.map((option) => option.id);
+	AVAILABLE_CHAT_MODELS = CHAT_MODEL_OPTIONS.filter((option) => option.available).map((option) => option.id);
+	DEFAULT_CHAT_MODEL = catalog.defaultModel;
+	return {
+		defaultModel: DEFAULT_CHAT_MODEL,
+		supportedModels: SUPPORTED_CHAT_MODELS,
+		availableModels: AVAILABLE_CHAT_MODELS,
+		models: CHAT_MODEL_OPTIONS,
+	};
+}
+
+configureChatModelCatalog(FALLBACK_MODEL_CATALOG);
 
 function normalizeModelName(modelName) {
 	return typeof modelName === "string" ? modelName.trim().toLowerCase() : "";
@@ -172,9 +134,7 @@ export function getGroupedChatModelOptions(modelNames = []) {
 
 	for (const option of options) {
 		const groupName = option.group || "Other";
-		if (!grouped.has(groupName)) {
-			grouped.set(groupName, []);
-		}
+		if (!grouped.has(groupName)) grouped.set(groupName, []);
 		grouped.get(groupName).push(option);
 	}
 
@@ -184,9 +144,7 @@ export function getGroupedChatModelOptions(modelNames = []) {
 			const orderB = CHAT_MODEL_GROUP_ORDER.indexOf(groupB);
 			const normalizedOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
 			const normalizedOrderB = orderB === -1 ? Number.MAX_SAFE_INTEGER : orderB;
-			if (normalizedOrderA !== normalizedOrderB) {
-				return normalizedOrderA - normalizedOrderB;
-			}
+			if (normalizedOrderA !== normalizedOrderB) return normalizedOrderA - normalizedOrderB;
 			return groupA.localeCompare(groupB);
 		})
 		.map(([group, models]) => ({ group, models }));
@@ -216,8 +174,13 @@ export function supportsThinkingEffort(modelName) {
 }
 
 export function getDefaultThinkingEffortForModel(modelName) {
-	const options = getThinkingEffortOptionsForModel(modelName).filter((option) => !option.disabled);
-	return options.find((option) => option.value === "medium")?.value || options[0]?.value || null;
+	const option = getChatModelOption(modelName);
+	const options = getThinkingEffortOptionsForModel(modelName).filter((item) => !item.disabled);
+	if (options.length === 0) return null;
+	if (option?.thinkingDefault && options.some((item) => item.value === option.thinkingDefault)) {
+		return option.thinkingDefault;
+	}
+	return options.find((item) => item.value === "medium")?.value || options[0]?.value || null;
 }
 
 export function normalizeThinkingEffortForModel(modelName, effortValue) {
@@ -225,10 +188,7 @@ export function normalizeThinkingEffortForModel(modelName, effortValue) {
 	if (options.length === 0) return null;
 
 	const normalized = typeof effortValue === "string" ? effortValue.trim().toLowerCase() : "";
-	if (options.some((option) => option.value === normalized)) {
-		return normalized;
-	}
-
+	if (options.some((option) => option.value === normalized)) return normalized;
 	return getDefaultThinkingEffortForModel(modelName);
 }
 
@@ -242,4 +202,3 @@ export function getThinkingEffortLabel(modelName, effortValue) {
 	const fallback = getDefaultThinkingEffortForModel(modelName);
 	return options.find((option) => option.value === fallback)?.label || "";
 }
-

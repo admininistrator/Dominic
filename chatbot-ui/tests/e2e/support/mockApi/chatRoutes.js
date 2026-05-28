@@ -86,6 +86,44 @@ function buildAssistantMeta(model = null, reasoningEffort = null) {
   };
 }
 
+function buildModelCatalog() {
+  return {
+    defaultModel: "gpt-5.4",
+    models: [
+      {
+        id: "gpt-5.4",
+        label: "GPT-5.4",
+        displayProvider: "OpenAI",
+        providerLabel: "9Router",
+        enabled: true,
+        default: true,
+        capabilities: {
+          reasoningEffort: {
+            enabled: true,
+            allowedValues: ["low", "medium", "high"],
+            default: "medium",
+            userConfigurable: true,
+          },
+        },
+      },
+      {
+        id: "deepseek-v4-pro",
+        label: "DeepSeek V4 Pro",
+        displayProvider: "DeepSeek",
+        providerLabel: "9Router",
+        enabled: true,
+        default: false,
+        capabilities: {
+          reasoningEffort: {
+            enabled: false,
+            userConfigurable: false,
+          },
+        },
+      },
+    ],
+  };
+}
+
 function buildDefaultAssistantReply(state, sessionId, message, knowledgeDocumentId = null, useWebSearch = false, model = null, reasoningEffort = null) {
   const explicitDocument = knowledgeDocumentId
     ? state.documents.find((document) => document.id === knowledgeDocumentId) || null
@@ -159,6 +197,11 @@ export async function handleChatRoute({ route, request, url, path, method, state
 
   if (normalizedPath === "/api/chat/usage/me" && method === "GET") {
     await fulfillJson(route, state.usage);
+    return true;
+  }
+
+  if (normalizedPath === "/api/chat/models" && method === "GET") {
+    await fulfillJson(route, buildModelCatalog());
     return true;
   }
 

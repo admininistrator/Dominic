@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "command": "npx",
+      "args": ["-y", "stitch-mcp"],
+      "env": {
+        "GOOGLE_CLOUD_PROJECT": "dominic-provide-stitch",
+        "STITCH_PROJECT_ID": "8705777580584421203"
+      },
+      "disabled": false,
+      "timeout": 120
+    }
+  }
+}

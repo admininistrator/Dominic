@@ -204,6 +204,11 @@ export async function getUsage() {
   return response.data;
 }
 
+export async function getChatModelCatalog() {
+  const response = await apiClient.get(`${API_PREFIX}/chat/models`);
+  return response.data;
+}
+
 
 export async function createSession({ title }) {
   const response = await apiClient.post(`${API_PREFIX}/chat/sessions`, { title });

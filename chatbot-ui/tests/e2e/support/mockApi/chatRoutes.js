@@ -385,7 +385,38 @@ export async function handleChatRoute({ route, request, url, path, method, state
         ];
         streamBody = [
           buildSseEvent("start", { request_id: requestId }),
-          buildSseEvent("delta", { text: reply, request_id: requestId }),
+          ...(state.includeInlineExcalidraw
+            ? [
+                buildSseEvent("artifact_delta", {
+                  request_id: requestId,
+                  artifact: {
+                    ...artifacts[0],
+                    content: JSON.stringify({
+                      ...inlineScene,
+                      elements: inlineScene.elements.slice(0, 1),
+                    }),
+                    metadata: {
+                      ...artifacts[0].metadata,
+                      render_mode: "inline_create_view_stream",
+                      streaming: true,
+                      sequence: 1,
+                    },
+                  },
+                }),
+                buildSseEvent("artifact_delta", {
+                  request_id: requestId,
+                  artifact: {
+                    ...artifacts[0],
+                    metadata: {
+                      ...artifacts[0].metadata,
+                      render_mode: "inline_create_view_stream",
+                      streaming: true,
+                      sequence: 2,
+                    },
+                  },
+                }),
+              ]
+            : [buildSseEvent("delta", { text: reply, request_id: requestId })]),
           buildSseEvent("final", {
             success: true,
             reply: response.reply,

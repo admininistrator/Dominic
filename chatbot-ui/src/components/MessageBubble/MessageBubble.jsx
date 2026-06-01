@@ -161,6 +161,7 @@ export default function MessageBubble({
   }, [activeImage]);
 
   const contentToRender = shouldAnimate ? displayedContent : content;
+  const hasRenderableContent = Boolean(String(contentToRender || "").trim());
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(content).then(() => {
@@ -250,7 +251,7 @@ export default function MessageBubble({
             )}
             <p className={styles.userText}>{contentToRender}</p>
           </div>
-        ) : (
+        ) : hasRenderableContent ? (
           <div className={`${styles.assistantCard} ${styles.markdown}`}>
             <ReactMarkdown
               components={{
@@ -260,7 +261,7 @@ export default function MessageBubble({
               {contentToRender}
             </ReactMarkdown>
           </div>
-        )}
+        ) : null}
 
         {/* Artifacts (assistant only) */}
         {!isUser && Array.isArray(artifacts) && artifacts.length > 0 && (

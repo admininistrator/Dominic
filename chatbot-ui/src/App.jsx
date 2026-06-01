@@ -22,6 +22,7 @@ import {
   getUsage,
   sendChatMessageStream,
 } from "./service/chatApi";
+import { buildExcalidrawArtifactFromStreamEvent } from "./utils/excalidrawArtifacts";
 import {
   deleteKnowledgeDocument,
   getAuditLogs,
@@ -1139,6 +1140,27 @@ export default function App() {
         ]);
       };
 
+      const upsertStreamingArtifact = (artifact) => {
+        if (!artifact || typeof artifact !== "object") return;
+        ensureAssistantMessage("");
+        setMessages((prev) => prev.map((message) => {
+          if (message.id !== assistantMessageId) return message;
+          const existingArtifacts = Array.isArray(message.artifacts) ? message.artifacts : [];
+          const artifactKey = artifact.id || `${artifact.type}-${artifact.title}`;
+          const nextArtifacts = existingArtifacts.some((item) => (item.id || `${item.type}-${item.title}`) === artifactKey)
+            ? existingArtifacts.map((item) => (
+                (item.id || `${item.type}-${item.title}`) === artifactKey ? artifact : item
+              ))
+            : [...existingArtifacts, artifact];
+          return {
+            ...message,
+            requestId: artifact?.metadata?.request_id || message.requestId,
+            artifacts: nextArtifacts,
+            animate: false,
+          };
+        }));
+      };
+
       await sendChatMessageStream({
         session_id: targetSessionId,
         message: text,
@@ -1170,6 +1192,12 @@ export default function App() {
                   }
                 : message
             )));
+            await waitForNextPaint();
+            return;
+          }
+
+          if (event === "artifact_start" || event === "artifact_delta" || event === "artifact_done" || event === "artifact_error") {
+            upsertStreamingArtifact(buildExcalidrawArtifactFromStreamEvent(event, data));
             await waitForNextPaint();
             return;
           }

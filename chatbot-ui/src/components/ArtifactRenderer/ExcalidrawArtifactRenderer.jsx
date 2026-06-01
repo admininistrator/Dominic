@@ -1,5 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, lazy, useState, useEffect, useCallback, useRef } from "react";
 import styles from "./ExcalidrawArtifactRenderer.module.css";
+import { buildExcalidrawScene, parsePartialExcalidrawElements } from "../../utils/excalidrawArtifacts";
+import "@excalidraw/excalidraw/index.css";
+
+const ExcalidrawEditor = lazy(() => import("@excalidraw/excalidraw").then((module) => ({ default: module.Excalidraw })));
 
 /* ── Shared icon SVGs ── */
 
@@ -134,13 +138,14 @@ function parseExcalidrawScene(content) {
   try {
     const parsed = JSON.parse(content);
     if (Array.isArray(parsed)) {
-      return { type: "excalidraw", version: 2, elements: parsed };
+      return buildExcalidrawScene(parsed);
     }
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.elements)) {
-      return parsed;
+      return { ...parsed, elements: parsePartialExcalidrawElements(parsed.elements) };
     }
   } catch {
-    return null;
+    const elements = parsePartialExcalidrawElements(content);
+    return elements.length ? buildExcalidrawScene(elements) : null;
   }
   return null;
 }
@@ -191,6 +196,23 @@ function buildViewBox(elements) {
   return `${minX - padding} ${minY - padding} ${width} ${height}`;
 }
 
+function getCameraViewBox(scene, fallbackElements) {
+  const allElements = Array.isArray(scene?.elements) ? scene.elements : [];
+  const camera = [...allElements]
+    .reverse()
+    .find((element) => (
+      element?.type === "cameraUpdate" &&
+      typeof element.x === "number" &&
+      typeof element.y === "number" &&
+      typeof element.width === "number" &&
+      typeof element.height === "number"
+    ));
+  if (camera) {
+    return `${camera.x} ${camera.y} ${Math.max(1, camera.width)} ${Math.max(1, camera.height)}`;
+  }
+  return buildViewBox(fallbackElements);
+}
+
 function splitTextLines(text, maxChars) {
   const words = String(text || "").trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
@@ -216,7 +238,7 @@ function InlineExcalidrawPreview({ scene, className = "", animate = false }) {
 
   if (elements.length === 0) return null;
 
-  const viewBox = buildViewBox(elements);
+  const viewBox = getCameraViewBox(scene, elements);
   const background =
     scene?.appState?.viewBackgroundColor &&
     typeof scene.appState.viewBackgroundColor === "string"
@@ -254,6 +276,12 @@ function InlineExcalidrawPreview({ scene, className = "", animate = false }) {
       ))}
     </svg>
   );
+}
+
+function getEditableElements(scene) {
+  return Array.isArray(scene?.elements)
+    ? scene.elements.filter((element) => element?.type !== "cameraUpdate")
+    : [];
 }
 
 function InlineElement({ element, animated = false, animationIndex = 0 }) {
@@ -503,6 +531,8 @@ export default function ExcalidrawArtifactRenderer({ artifact }) {
     hasContent && isLikelyJson(artifact.content);
   const inlineScene = isJsonContent ? parseExcalidrawScene(artifact.content) : null;
   const hasInlinePreview = Boolean(inlineScene?.elements?.length);
+  const isStreaming = artifact?.metadata?.streaming === true || artifact?.metadata?.status === "streaming";
+  const artifactError = artifact?.metadata?.status === "error" ? artifact?.metadata?.error : null;
 
   // Toast management
   const showToast = useCallback((message) => {
@@ -590,6 +620,12 @@ export default function ExcalidrawArtifactRenderer({ artifact }) {
               via {artifact.metadata.tool_server}
             </span>
           )}
+          {isStreaming && !artifactError && (
+            <span className={styles.subtitle}>Streaming diagram...</span>
+          )}
+          {artifactError && (
+            <span className={styles.errorText}>{artifactError}</span>
+          )}
         </div>
       </div>
 
@@ -620,6 +656,7 @@ export default function ExcalidrawArtifactRenderer({ artifact }) {
           >
             <InlineExcalidrawPreview scene={inlineScene} animate />
           </button>
+          {isStreaming && <div className={styles.streamingBadge}>Streaming</div>}
         </div>
       ) : (
         <div className={styles.placeholder}>
@@ -697,7 +734,17 @@ export default function ExcalidrawArtifactRenderer({ artifact }) {
               onClick={(e) => e.stopPropagation()}
               role="presentation"
             >
-              <InlineExcalidrawPreview scene={inlineScene} className={styles.lightboxSvg} />
+              <Suspense fallback={<InlineExcalidrawPreview scene={inlineScene} className={styles.lightboxSvg} />}>
+                <ExcalidrawEditor
+                  initialData={{
+                    elements: getEditableElements(inlineScene),
+                    appState: {
+                      viewBackgroundColor: inlineScene?.appState?.viewBackgroundColor || "#ffffff",
+                    },
+                    files: inlineScene?.files || {},
+                  }}
+                />
+              </Suspense>
             </div>
           )}
         </div>

@@ -3,24 +3,28 @@ import ImageArtifactRenderer from "./ImageArtifactRenderer";
 import LinkArtifactRenderer from "./LinkArtifactRenderer";
 import ExcalidrawArtifactRenderer from "./ExcalidrawArtifactRenderer";
 import GenericToolResultRenderer from "./GenericToolResultRenderer";
+import McpResourceRenderer from "./McpResourceRenderer";
+import {
+  getSafeMcpResourceUrl,
+  resolveArtifactRendererKind,
+  resolveArtifactTypeLabel,
+} from "../../utils/artifactRouting";
 
 /**
  * ArtifactRenderer — router component that selects the correct sub-renderer
- * based on artifact.type.
+ * based on normalized artifact kind/type.
  *
- * Props:
- *   artifact: object with { id, type, title, url, preview_url, metadata }
- *
- * Unknown or unsupported types fall back to GenericToolResultRenderer.
- * Returns null if artifact is null/undefined.
+ * Native renderers stay first-class (notably Excalidraw). MCP app/resource
+ * artifacts use a separate safe iframe extension point and unknown artifacts
+ * continue to fall back to GenericToolResultRenderer.
  */
 export default function ArtifactRenderer({ artifact }) {
   if (!artifact) return null;
 
-  const typeLabel = resolveTypeLabel(artifact.type);
+  const rendererKind = resolveArtifactRendererKind(artifact);
+  const typeLabel = resolveArtifactTypeLabel(artifact);
 
-  // Common type → specific renderer
-  if (artifact.type === "image" || artifact.type === "svg") {
+  if (rendererKind === "image") {
     return (
       <ArtifactCard title={artifact.title} typeLabel={typeLabel} url={artifact.url}>
         <ImageArtifactRenderer artifact={artifact} />
@@ -28,7 +32,7 @@ export default function ArtifactRenderer({ artifact }) {
     );
   }
 
-  if (artifact.type === "link") {
+  if (rendererKind === "link") {
     return (
       <ArtifactCard title={artifact.title} typeLabel={typeLabel} url={artifact.url}>
         <LinkArtifactRenderer artifact={artifact} />
@@ -36,16 +40,27 @@ export default function ArtifactRenderer({ artifact }) {
     );
   }
 
-  if (artifact.type === "excalidraw") {
+  if (rendererKind === "excalidraw") {
     return (
       <ExcalidrawArtifactRenderer
-        key={artifact.id || artifact.url || artifact.type}
+        key={artifact.id || artifact.url || artifact.type || artifact.kind}
         artifact={artifact}
       />
     );
   }
 
-  // Default / unknown / generic_tool_result: fall back to GenericToolResultRenderer
+  if (rendererKind === "mcp_resource") {
+    return (
+      <ArtifactCard
+        title={artifact.title || "MCP app"}
+        typeLabel={typeLabel}
+        url={getSafeMcpResourceUrl(artifact)}
+      >
+        <McpResourceRenderer artifact={artifact} />
+      </ArtifactCard>
+    );
+  }
+
   return (
     <ArtifactCard
       title={artifact.title || null}
@@ -55,25 +70,4 @@ export default function ArtifactRenderer({ artifact }) {
       <GenericToolResultRenderer artifact={artifact} />
     </ArtifactCard>
   );
-}
-
-/**
- * Map artifact type to a human-readable label for the type badge.
- */
-function resolveTypeLabel(type) {
-  if (!type) return "UNKNOWN";
-  switch (type) {
-    case "image":
-      return "IMAGE";
-    case "svg":
-      return "SVG";
-    case "link":
-      return "LINK";
-    case "excalidraw":
-      return "EXCALIDRAW";
-    case "generic_tool_result":
-      return "TOOL RESULT";
-    default:
-      return type.toUpperCase().replace(/_/g, " ");
-  }
 }

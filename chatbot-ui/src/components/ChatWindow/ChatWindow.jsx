@@ -191,6 +191,7 @@ export default function ChatWindow({
                 sources={msg.sources}
                 assistantMeta={msg.assistantMeta}
                 animate={msg.animate}
+                artifacts={msg.artifacts}
               />
             ))}
             {isLoading && <ThinkingBubble />}

@@ -34,6 +34,11 @@ export function createApiState({
   // events and close the stream without any terminal event (no `error`, no
   // `final`).  The FE parser must treat this as a protocol failure.
   streamNoTerminal = false,
+  // When true the next POST /api/chat/stream SSE final event will include
+  // `artifacts` and `tool_results` fields (MCP artifact rendering test).
+  includeArtifacts = false,
+  // When true the Excalidraw artifact is inline JSON without a remote preview URL.
+  includeInlineExcalidraw = false,
 } = {}) {
   const safeSessions = Array.isArray(sessions) && sessions.length > 0 ? sessions : [createSessionRecord()];
   const nextSessionId = Math.max(...safeSessions.map((session) => session.id), 100) + 1;
@@ -71,6 +76,8 @@ export function createApiState({
     tokenGeneration: 0,
     streamErrorOnly,
     streamNoTerminal,
+    includeArtifacts,
+    includeInlineExcalidraw,
     // When true the next POST /auth/logout will be rejected with 401 (then reset
     // to false) to simulate a stale access token at the moment of logout.
     rejectNextLogoutWith401: false,

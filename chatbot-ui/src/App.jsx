@@ -281,6 +281,8 @@ function mapHistoryRowToUiMessage(row, images = [], documents = []) {
           output_tokens: Number(row.output_tokens || 0),
         }
       : undefined,
+    artifacts: isAssistant ? (Array.isArray(row.artifacts) ? row.artifacts : []) : undefined,
+    toolResults: isAssistant ? (Array.isArray(row.tool_results) ? row.tool_results : []) : undefined,
     animate: false,
   };
 }
@@ -304,6 +306,16 @@ function buildChatErrorMessage(message) {
 function waitForMs(duration) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, duration);
+  });
+}
+
+function waitForNextPaint() {
+  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
   });
 }
 
@@ -1120,6 +1132,8 @@ export default function App() {
             sources: [],
             retrieval: null,
             assistantMeta: placeholderAssistantMeta,
+            artifacts: [],
+            toolResults: [],
             animate: false,
           },
         ]);
@@ -1135,7 +1149,7 @@ export default function App() {
         images: images.length > 0 ? images : undefined,
       }, {
         signal: streamController.signal,
-        onEvent: ({ event, data }) => {
+        onEvent: async ({ event, data }) => {
           if (event === "start") {
             syncResolvedRequestId(data?.request_id);
             return;
@@ -1156,6 +1170,7 @@ export default function App() {
                   }
                 : message
             )));
+            await waitForNextPaint();
             return;
           }
 
@@ -1173,6 +1188,8 @@ export default function App() {
                     retrieval: data?.retrieval || null,
                     assistantMeta: normalizeAssistantMeta(data?.assistant_meta) || placeholderAssistantMeta,
                     usage: data?.usage || message.usage,
+                    artifacts: Array.isArray(data?.artifacts) ? data.artifacts : [],
+                    toolResults: Array.isArray(data?.tool_results) ? data.tool_results : [],
                     animate: false,
                   }
                 : message

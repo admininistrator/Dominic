@@ -329,6 +329,13 @@
 .cautiousBadge { background: #fffbeb; color: #d97706; border-color: #fde68a; }
 .insufficientBadge { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
 
+/* ── Artifacts section ── */
+.artifactsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* ── Action bar ── */
 .actionBar {
   display: flex;

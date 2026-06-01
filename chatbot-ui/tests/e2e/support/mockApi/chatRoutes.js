@@ -310,8 +310,96 @@ export async function handleChatRoute({ route, request, url, path, method, state
       const reply = response.reply || "";
       let streamBody;
 
-      if (state.streamErrorOnly) {
-        // Regression: stream emits an `error` SSE event and closes — no `final`.
+      if (state.includeArtifacts) {
+        const inlineScene = {
+          type: "excalidraw",
+          version: 2,
+          elements: [
+            {
+              id: "shape-1",
+              type: "ellipse",
+              x: 20,
+              y: 20,
+              width: 220,
+              height: 90,
+              strokeColor: "#1e1e1e",
+              backgroundColor: "#e7f5ff",
+              strokeWidth: 2,
+              opacity: 100,
+            },
+            {
+              id: "text-1",
+              type: "text",
+              x: 42,
+              y: 48,
+              width: 176,
+              height: 28,
+              strokeColor: "#1e1e1e",
+              backgroundColor: "transparent",
+              fontSize: 18,
+              text: "Inline Excalidraw",
+              originalText: "Inline Excalidraw",
+              textAlign: "center",
+              lineHeight: 1.25,
+              opacity: 100,
+            },
+          ],
+          appState: { viewBackgroundColor: "#ffffff" },
+          files: {},
+        };
+        const artifacts = [
+          state.includeInlineExcalidraw
+            ? {
+                id: "art_1",
+                type: "excalidraw",
+                title: "Inline Excalidraw Scene",
+                content: JSON.stringify(inlineScene),
+                url: null,
+                preview_url: null,
+                metadata: { tool_server: "excalidraw", tool_name: "create_view" },
+              }
+            : {
+                id: "art_1",
+                type: "excalidraw",
+                title: "Architecture Diagram",
+                url: "https://excalidraw.com/#json=abc123",
+                preview_url: null,
+                metadata: { tool_server: "excalidraw", tool_name: "create-excalidraw" },
+              },
+          {
+            id: "art_2",
+            type: "link",
+            title: "Reference Link",
+            url: "https://example.com/docs",
+            metadata: { tool_server: "test", tool_name: "fetch-doc" },
+          },
+        ];
+        const toolResults = [
+          {
+            tool_server_id: "excalidraw",
+            tool_name: "create-excalidraw",
+            status: "success",
+            duration_ms: 1200,
+            artifact_ids: ["art_1"],
+          },
+        ];
+        streamBody = [
+          buildSseEvent("start", { request_id: requestId }),
+          buildSseEvent("delta", { text: reply, request_id: requestId }),
+          buildSseEvent("final", {
+            success: true,
+            reply: response.reply,
+            request_id: requestId,
+            assistant_meta: response.assistant_meta,
+            sources: response.sources,
+            retrieval: response.retrieval,
+            usage: response.usage,
+            artifacts,
+            tool_results: toolResults,
+          }),
+        ].join("");
+      } else if (state.streamErrorOnly) {
+        // Regression: stream emits an `error` SSE event
         // The FE parser must treat `error` as terminal and surface the error
         // without requiring a subsequent `final` event.
         streamBody = [

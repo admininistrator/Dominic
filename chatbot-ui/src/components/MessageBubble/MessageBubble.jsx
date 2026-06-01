@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { DOMINIC_AVATAR_ICON, USER_AVATAR_ICON } from "../../assets/icons";
 import { TYPEWRITER_INTERVAL_MS } from "../../config/uiConfig";
+import ArtifactRenderer from "../ArtifactRenderer/ArtifactRenderer";
 import styles from "./MessageBubble.module.css";
 
 const IconThumbUp = () => (
@@ -103,6 +104,7 @@ export default function MessageBubble({
   images = [],
   documents = [],
   assistantMeta = null,
+  artifacts = [],
 }) {
   const isUser = role === "user";
   const shouldAnimate = !isUser && animate;
@@ -257,6 +259,18 @@ export default function MessageBubble({
             >
               {contentToRender}
             </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Artifacts (assistant only) */}
+        {!isUser && Array.isArray(artifacts) && artifacts.length > 0 && (
+          <div className={styles.artifactsSection}>
+            {artifacts.map((artifact) => (
+              <ArtifactRenderer
+                key={artifact.id || `${artifact.type}-${artifact.title}`}
+                artifact={artifact}
+              />
+            ))}
           </div>
         )}
 

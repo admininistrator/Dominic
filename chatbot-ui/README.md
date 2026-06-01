@@ -31,12 +31,27 @@ npm run dev
 Mặc định frontend gọi backend ở:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8080
 ```
+
+Recommended local flow:
+
+```text
+Frontend Vite local -> Nginx Docker local -> FastAPI local
+```
+
+FastAPI still runs outside Docker at `http://127.0.0.1:8000`. Nginx runs in Docker and exposes `http://127.0.0.1:8080`.
 
 ## Environment
 
 Sao chép từ `.env.example` và chỉnh nếu cần:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8080
+VITE_API_TIMEOUT_MS=120000
+```
+
+To bypass Nginx and call the local backend directly:
 
 ```dotenv
 VITE_API_BASE_URL=http://127.0.0.1:8000
